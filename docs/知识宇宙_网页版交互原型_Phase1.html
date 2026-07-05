@@ -1,0 +1,707 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>知识宇宙 · 网页版交互原型 Phase 1</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Serif+SC:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#FAF8F3; --surface:#FFFFFF; --surface-2:#F6F2EA;
+  --ink:#20242E; --ink-soft:#565B66; --ink-faint:#9A9EA8;
+  --line:#ECE6DB; --line-soft:#F3EEE5;
+  --amber:#DD9527; --amber-deep:#B0701A; --amber-wash:rgba(221,149,39,.18); --amber-line:rgba(221,149,39,.5);
+  --sage:#5E7A6B; --sage-wash:rgba(94,122,107,.14);
+  --danger:#C0584B;
+  --shadow-sm:0 1px 2px rgba(30,32,40,.05);
+  --shadow:0 1px 2px rgba(30,32,40,.04),0 10px 28px rgba(30,32,40,.07);
+  --shadow-lg:0 24px 60px rgba(30,32,40,.18);
+  --font-ui:"Inter","PingFang SC","Hiragino Sans GB","Microsoft YaHei",system-ui,sans-serif;
+  --font-read:"Noto Serif SC","Songti SC","STSong",Georgia,serif;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{
+  font-family:var(--font-ui); color:var(--ink);
+  background:radial-gradient(1400px 700px at 50% -8%, #F0EADF 0%, rgba(240,234,223,0) 58%),linear-gradient(180deg,#EFE9DE 0%, #E7E0D3 100%);
+  min-height:100vh;
+}
+::selection{background:var(--amber-wash)}
+button{font-family:inherit}
+
+/* ---- prototype screen switcher ---- */
+.proto-bar{position:sticky;top:0;z-index:200;display:flex;align-items:center;gap:8px;justify-content:center;flex-wrap:wrap;
+  padding:11px 16px;background:rgba(247,243,236,.82);backdrop-filter:blur(10px);border-bottom:1px solid rgba(0,0,0,.05)}
+.proto-bar .pmark{font-weight:700;font-size:13px;letter-spacing:.4px;margin-right:6px}
+.proto-bar .pmark span{color:var(--amber-deep)}
+.proto-bar button{font-size:12.5px;color:#6E6859;background:rgba(255,255,255,.6);border:1px solid rgba(0,0,0,.06);
+  padding:7px 14px;border-radius:999px;cursor:pointer;transition:.16s}
+.proto-bar button:hover{background:#fff;color:var(--ink)}
+.proto-bar button.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+
+/* ---- app shell ---- */
+.app{max-width:1240px;margin:0 auto;min-height:calc(100vh - 50px)}
+.screen{display:none}
+.screen.active{display:block;animation:fade .3s ease}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+.appbar{display:flex;align-items:center;gap:24px;padding:20px 28px 18px}
+.appbar .word{font-size:21px;font-weight:700;letter-spacing:.5px}
+.appbar .word span{color:var(--amber-deep)}
+.appbar nav{display:flex;gap:6px;margin-left:6px}
+.appbar nav a{font-size:13.5px;color:var(--ink-soft);padding:7px 13px;border-radius:10px;cursor:pointer;transition:.15s}
+.appbar nav a:hover{background:rgba(255,255,255,.6);color:var(--ink)}
+.appbar nav a.cur{color:var(--ink);font-weight:600;background:#fff;box-shadow:var(--shadow-sm)}
+.appbar .spacer{flex:1}
+.appbar .avatar{width:38px;height:38px;border-radius:50%;background:var(--ink);color:#fff;display:grid;place-items:center;font-weight:600;font-size:15px;cursor:pointer;flex:none}
+
+.primary{background:var(--ink);color:#fff;border:none;border-radius:14px;padding:13px 18px;font-size:14px;font-weight:600;cursor:pointer;
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;transition:.18s}
+.primary:hover{transform:translateY(-1px);box-shadow:var(--shadow)}
+.primary svg{width:16px;height:16px;stroke:var(--amber);fill:none;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
+.ghost{background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:12px;padding:9px 14px;font-size:13px;font-weight:600;cursor:pointer;transition:.15s}
+.ghost:hover{border-color:var(--amber-line);color:var(--amber-deep)}
+
+.tag{font-size:10.5px;font-weight:600;padding:3px 10px;border-radius:999px;white-space:nowrap;letter-spacing:.3px}
+.tag.career{background:var(--amber-wash);color:var(--amber-deep)}
+.tag.skill{background:#E9EFEA;color:var(--sage)}
+.tag.read{background:#ECEAF2;color:#5C5A86}
+
+/* ============ LOGIN ============ */
+#login{min-height:calc(100vh - 50px);display:flex;align-items:center;justify-content:center;padding:30px}
+.login-card{width:100%;max-width:380px;text-align:center}
+.login-card .big{font-size:46px;font-weight:700;letter-spacing:1px}
+.login-card .big span{color:var(--amber-deep)}
+.login-card .tag-line{font-family:var(--font-read);font-size:15.5px;color:var(--ink-soft);margin-top:16px;line-height:1.65}
+.login-card .pathline{margin:30px auto 30px;width:170px;height:44px}
+.login-card .field{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px 16px;font-size:14px;color:var(--ink-faint);text-align:left;margin-bottom:12px}
+.login-card .primary{width:100%}
+.login-card .foot{margin-top:20px;font-size:12.5px;color:var(--ink-faint);line-height:1.8}
+.login-card .foot a{color:var(--amber-deep);text-decoration:none;cursor:pointer}
+.login-card .reg-note{margin-top:6px;font-size:11.5px;color:var(--ink-faint)}
+
+/* ============ HOME ============ */
+.home-wrap{padding:6px 28px 60px}
+.home-hd{display:flex;align-items:flex-end;justify-content:space-between;padding:8px 2px 6px}
+.home-hd .greet{font-family:var(--font-read);font-size:24px;font-weight:600;letter-spacing:.3px}
+.home-hd .greet small{display:block;font-family:var(--font-ui);font-size:13px;color:var(--ink-soft);font-weight:400;margin-top:7px}
+.section-label{font-size:11.5px;font-weight:600;letter-spacing:1.4px;color:var(--ink-faint);text-transform:uppercase;padding:26px 2px 14px}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+@media(max-width:980px){.grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:660px){.grid{grid-template-columns:1fr}}
+.space-card{background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:18px 18px 16px;box-shadow:var(--shadow-sm);cursor:pointer;transition:.2s;display:flex;flex-direction:column}
+.space-card:hover{transform:translateY(-3px);box-shadow:var(--shadow)}
+.space-card .row1{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+.space-card .nm{font-size:17px;font-weight:600;letter-spacing:.2px}
+.space-card .sub{font-size:12px;color:var(--ink-faint);margin-top:6px;line-height:1.5}
+.prog{display:flex;align-items:center;gap:10px;margin-top:16px}
+.bar{flex:1;height:6px;border-radius:99px;background:var(--line-soft);overflow:hidden}
+.bar i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,var(--amber),var(--amber-deep))}
+.prog .n{font-size:11.5px;color:var(--ink-faint);font-feature-settings:"tnum"}
+.resume{display:flex;align-items:center;gap:8px;margin-top:14px;padding-top:14px;border-top:1px dashed var(--line)}
+.resume .dot{width:6px;height:6px;border-radius:50%;background:var(--amber);flex:none;box-shadow:0 0 0 4px var(--amber-wash)}
+.resume .txt{font-size:12.5px;color:var(--ink-soft);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.resume .txt b{color:var(--ink);font-weight:600}
+.resume .go{margin-left:auto;font-size:12px;font-weight:600;color:var(--amber-deep);flex:none}
+.newspace{border:1.5px dashed var(--line);border-radius:20px;padding:18px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:var(--ink-soft);font-size:14px;font-weight:500;cursor:pointer;transition:.18s;min-height:172px}
+.newspace:hover{border-color:var(--amber-line);color:var(--amber-deep);background:var(--surface)}
+.newspace .plus{width:40px;height:40px;border-radius:50%;background:var(--surface-2);display:grid;place-items:center;font-size:22px;color:var(--amber-deep)}
+.newspace small{font-size:11.5px;color:var(--ink-faint)}
+
+/* ============ PATH (two-pane) ============ */
+.path-grid{display:grid;grid-template-columns:1fr 360px;gap:24px;padding:6px 28px 60px;align-items:start}
+@media(max-width:900px){.path-grid{grid-template-columns:1fr}}
+.path-head{padding:0 2px 4px}
+.crumb{font-size:12.5px;color:var(--ink-faint);cursor:pointer;display:inline-flex;align-items:center;gap:6px;margin-bottom:12px}
+.crumb:hover{color:var(--amber-deep)}
+.path-head h1{font-family:var(--font-read);font-size:30px;font-weight:600;letter-spacing:.5px}
+.path-head .meta{font-size:13px;color:var(--ink-soft);margin-top:10px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.overall{margin:20px 2px 6px;display:flex;align-items:center;gap:12px}
+.overall .bar{height:8px}
+.overall .pct{font-size:13px;font-weight:600;color:var(--amber-deep);font-feature-settings:"tnum"}
+
+.phase{margin-top:24px}
+.phase-h{display:flex;align-items:center;gap:11px;margin-bottom:14px}
+.phase-h .idx{font-size:11px;font-weight:700;color:#fff;background:var(--ink);width:24px;height:24px;border-radius:7px;display:grid;place-items:center;flex:none}
+.phase-h .pt{font-size:15px;font-weight:600;letter-spacing:.3px}
+.phase-h .ps{margin-left:auto;font-size:11.5px;color:var(--ink-faint)}
+.units{position:relative;padding-left:26px}
+.units::before{content:"";position:absolute;left:5px;top:6px;bottom:6px;width:2px;background:var(--line)}
+.unit{position:relative;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px 16px;margin-bottom:10px;cursor:pointer;transition:.18s;display:flex;align-items:center;gap:12px}
+.unit:hover{border-color:var(--amber-line);transform:translateX(3px);box-shadow:var(--shadow-sm)}
+.unit::before{content:"";position:absolute;left:-26px;top:50%;transform:translateY(-50%);width:12px;height:12px;border-radius:50%;background:var(--paper);border:2px solid var(--line)}
+.unit.done::before{background:var(--sage);border-color:var(--sage)}
+.unit.cur::before{background:var(--amber);border-color:var(--amber);box-shadow:0 0 0 5px var(--amber-wash)}
+.unit .ut{flex:1;font-size:14.5px;font-weight:600;letter-spacing:.2px}
+.unit .us{font-size:11.5px;color:var(--ink-faint);margin-top:4px;font-weight:400}
+.unit .st{font-size:11px;font-weight:600;padding:3px 9px;border-radius:999px;flex:none}
+.st.done{background:var(--sage-wash);color:var(--sage)}
+.st.learning{background:var(--amber-wash);color:var(--amber-deep)}
+.st.todo{background:var(--surface-2);color:var(--ink-faint)}
+
+/* right rail of path */
+.side{position:sticky;top:70px;display:flex;flex-direction:column;gap:16px}
+.resume-hero{background:var(--ink);color:#fff;border-radius:18px;padding:18px;cursor:pointer;transition:.2s}
+.resume-hero:hover{transform:translateY(-2px);box-shadow:var(--shadow)}
+.resume-hero small{font-size:10.5px;color:rgba(255,255,255,.6);letter-spacing:.8px;text-transform:uppercase}
+.resume-hero .ru{font-family:var(--font-read);font-size:17px;font-weight:600;margin-top:9px;line-height:1.4}
+.resume-hero .rgo{display:inline-flex;align-items:center;gap:7px;margin-top:14px;font-size:13px;font-weight:600;color:var(--amber)}
+.minicard{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:16px}
+.minicard .h{font-size:11px;font-weight:600;letter-spacing:.8px;color:var(--ink-faint);text-transform:uppercase;margin-bottom:12px}
+.minirow{display:flex;align-items:center;gap:9px;padding:9px 0;cursor:pointer;border-bottom:1px dashed var(--line)}
+.minirow:last-child{border-bottom:0}
+.minirow:hover .ml{color:var(--amber-deep)}
+.minirow .mi{width:30px;height:30px;border-radius:9px;background:var(--surface-2);display:grid;place-items:center;flex:none}
+.minirow .mi svg{width:15px;height:15px;stroke:var(--ink-soft);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.minirow .ml{font-size:13.5px;font-weight:500;flex:1;transition:.15s}
+.minirow .mc{font-size:12px;color:var(--ink-faint);font-feature-settings:"tnum"}
+
+/* ============ READING (three-zone) ============ */
+.read-grid{display:grid;grid-template-columns:248px minmax(0,1fr) 200px;gap:0;align-items:start;transition:grid-template-columns .28s ease}
+.read-grid.rail-collapsed{grid-template-columns:0 minmax(0,1fr) 200px}
+.read-rail{border-right:1px solid var(--line);padding:18px 18px 60px;position:sticky;top:50px;height:calc(100vh - 50px);overflow-y:auto;overflow-x:hidden}
+.read-grid.rail-collapsed .read-rail{padding:18px 0;opacity:0;pointer-events:none}
+.read-rail .rr-sp{font-size:11px;font-weight:600;letter-spacing:.8px;color:var(--ink-faint);text-transform:uppercase}
+.read-rail h4{font-size:12.5px;font-weight:700;margin:16px 0 8px;color:var(--ink-soft)}
+.rr-unit{font-size:13px;color:var(--ink-soft);padding:8px 10px;border-radius:9px;cursor:pointer;display:flex;align-items:center;gap:8px;transition:.14s;line-height:1.35}
+.rr-unit:hover{background:var(--surface)}
+.rr-unit.cur{background:#fff;color:var(--ink);font-weight:600;box-shadow:var(--shadow-sm)}
+.rr-unit .d{width:7px;height:7px;border-radius:50%;flex:none;background:var(--line)}
+.rr-unit.done .d{background:var(--sage)}
+.rr-unit.cur .d{background:var(--amber)}
+
+.reading{padding:30px 56px 120px;min-width:0}
+.read-inner{max-width:680px;margin:0 auto}
+.rd-top{display:flex;align-items:center;gap:12px;margin-bottom:8px}
+.railtoggle{width:34px;height:34px;border-radius:9px;border:1px solid var(--line);background:var(--surface);cursor:pointer;display:grid;place-items:center;flex:none;transition:.15s}
+.railtoggle:hover{border-color:var(--amber-line)}
+.railtoggle svg{width:16px;height:16px;stroke:var(--ink-soft);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.rd-kicker{font-size:12px;color:var(--ink-faint);letter-spacing:.3px}
+.rd-title{font-family:var(--font-read);font-size:30px;font-weight:600;line-height:1.32;margin-top:6px;letter-spacing:.5px}
+.rd-guide{font-family:var(--font-read);font-size:15px;line-height:1.85;color:var(--ink-soft);margin-top:18px;padding-left:16px;border-left:2.5px solid var(--amber-line)}
+.rd-goals{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px 18px;margin-top:22px}
+.rd-goals .gh{font-size:11.5px;font-weight:700;letter-spacing:.6px;color:var(--amber-deep);text-transform:uppercase;margin-bottom:10px}
+.rd-goals li{list-style:none;font-size:14px;line-height:1.7;color:var(--ink-soft);padding-left:22px;position:relative;margin-bottom:5px}
+.rd-goals li::before{content:"✓";position:absolute;left:0;color:var(--sage);font-weight:700}
+.rd-h2{font-family:var(--font-read);font-size:21px;font-weight:600;letter-spacing:.4px;margin:38px 0 16px;scroll-margin-top:70px}
+.para{font-family:var(--font-read);font-size:16px;line-height:1.95;color:#2B2F39;margin-bottom:18px;border-radius:6px;transition:background .15s;padding:3px 5px;margin-left:-5px;margin-right:-5px}
+.rd-card{background:var(--surface-2);border:1px solid var(--line);border-radius:12px;padding:15px 18px;margin:6px 0 20px;font-family:var(--font-read);font-size:14.5px;line-height:1.85;color:var(--ink-soft)}
+.rd-card b{color:var(--ink)}
+.rd-actions{display:flex;align-items:center;gap:12px;margin-top:46px;padding-top:24px;border-top:1px solid var(--line)}
+
+/* in-unit TOC */
+.toc{position:sticky;top:70px;padding:30px 24px;height:calc(100vh - 50px)}
+.toc .th{font-size:11px;font-weight:600;letter-spacing:.8px;color:var(--ink-faint);text-transform:uppercase;margin-bottom:14px}
+.toc a{display:block;font-size:12.5px;color:var(--ink-soft);padding:7px 0 7px 12px;border-left:2px solid var(--line);cursor:pointer;transition:.14s;line-height:1.45}
+.toc a:hover{color:var(--ink)}
+.toc a.cur{color:var(--amber-deep);border-left-color:var(--amber);font-weight:600}
+.toc .hint{margin-top:22px;font-size:11.5px;color:var(--ink-faint);line-height:1.65;background:var(--amber-wash);border-radius:10px;padding:11px 12px}
+
+/* selection bubble */
+.selbubble{position:fixed;z-index:120;transform:translate(-50%,-118%);background:var(--ink);color:#fff;border-radius:12px;padding:8px 13px;font-size:13px;font-weight:600;cursor:pointer;display:none;align-items:center;gap:8px;box-shadow:var(--shadow-lg);animation:pop .14s ease}
+.selbubble.show{display:flex}
+.selbubble::after{content:"";position:absolute;left:50%;bottom:-6px;transform:translateX(-50%);border:6px solid transparent;border-top-color:var(--ink);border-bottom:0}
+.selbubble svg{width:15px;height:15px;stroke:var(--amber);fill:none;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
+@keyframes pop{from{opacity:0;transform:translate(-50%,-108%) scale(.9)}to{opacity:1;transform:translate(-50%,-118%) scale(1)}}
+
+/* ask drawer */
+.scrim{position:fixed;inset:0;background:rgba(20,22,28,.28);z-index:130;opacity:0;visibility:hidden;transition:.25s}
+.scrim.show{opacity:1;visibility:visible}
+.drawer{position:fixed;top:0;right:0;bottom:0;width:440px;max-width:92vw;background:var(--paper);z-index:140;
+  box-shadow:-16px 0 50px rgba(20,22,28,.18);transform:translateX(100%);transition:transform .3s cubic-bezier(.32,.72,0,1);display:flex;flex-direction:column}
+.drawer.show{transform:none}
+.dr-h{display:flex;align-items:center;justify-content:space-between;padding:20px 22px 14px;flex:none;border-bottom:1px solid var(--line)}
+.dr-h .t{font-size:14.5px;font-weight:600;display:flex;align-items:center;gap:8px}
+.dr-h .t .badge{width:22px;height:22px;border-radius:7px;background:var(--amber-wash);display:grid;place-items:center;color:var(--amber-deep);font-weight:700;font-size:12px;font-family:var(--font-read)}
+.dr-h .x{width:30px;height:30px;border-radius:8px;display:grid;place-items:center;cursor:pointer;color:var(--ink-faint);transition:.15s}
+.dr-h .x:hover{background:var(--surface-2);color:var(--ink)}
+.dr-scroll{flex:1;overflow-y:auto;padding:18px 22px}
+.quote{font-family:var(--font-read);font-size:14px;line-height:1.65;color:var(--ink-soft);background:var(--amber-wash);border-radius:12px;padding:12px 14px;border-left:3px solid var(--amber)}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}
+.chip{font-size:12.5px;color:var(--ink-soft);background:var(--surface);border:1px solid var(--line);border-radius:99px;padding:8px 13px;cursor:pointer;transition:.15s}
+.chip:hover{border-color:var(--amber-line);color:var(--amber-deep);background:#fff}
+.answer{margin-top:20px;display:none}
+.answer.show{display:block;animation:fade .3s ease}
+.answer .alabel{font-size:10.5px;font-weight:700;letter-spacing:.6px;color:var(--amber-deep);text-transform:uppercase;margin-bottom:10px;display:flex;align-items:center;gap:7px}
+.answer p{font-size:14.5px;line-height:1.8;color:#2B2F39;margin-bottom:13px}
+.answer p b{font-weight:600;color:var(--ink)}
+.answer .ex{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:13px 15px;font-size:13.5px;line-height:1.75;color:var(--ink-soft);margin-bottom:13px}
+.loading{display:none;align-items:center;gap:10px;margin-top:20px;color:var(--ink-soft);font-size:13.5px}
+.loading.show{display:flex}
+.loading .spin{width:16px;height:16px;border:2px solid var(--line);border-top-color:var(--amber);border-radius:50%;animation:rot .7s linear infinite}
+@keyframes rot{to{transform:rotate(360deg)}}
+.dr-foot{flex:none;padding:14px 22px 20px;border-top:1px solid var(--line)}
+.ask-input{display:flex;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:11px 13px;transition:.15s}
+.ask-input:focus-within{border-color:var(--amber-line)}
+.ask-input input{flex:1;border:none;outline:none;background:transparent;font-size:14px;font-family:var(--font-ui);color:var(--ink)}
+.ask-input input::placeholder{color:var(--ink-faint)}
+.ask-input .send{width:32px;height:32px;border-radius:50%;background:var(--amber);display:grid;place-items:center;flex:none;cursor:pointer;transition:.15s}
+.ask-input .send:hover{background:var(--amber-deep)}
+.ask-input .send svg{width:15px;height:15px;stroke:#fff;fill:none;stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round}
+.kbd{font-size:11px;color:var(--ink-faint);margin-top:9px;text-align:center}
+.kbd b{font-family:var(--font-ui);background:var(--surface);border:1px solid var(--line);border-radius:5px;padding:1px 6px;font-weight:600;color:var(--ink-soft)}
+
+/* generating overlay */
+.genwrap{display:none;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:90px 30px;min-height:400px}
+.genwrap.show{display:flex;animation:fade .3s ease}
+.genwrap .ring{width:44px;height:44px;border:3px solid var(--line);border-top-color:var(--amber);border-radius:50%;animation:rot .8s linear infinite;margin-bottom:20px}
+.genwrap h3{font-family:var(--font-read);font-size:19px;font-weight:600;margin-bottom:12px}
+.genwrap p{font-size:13.5px;color:var(--ink-soft);line-height:1.7;max-width:340px}
+
+/* ============ QUESTION LOG ============ */
+.qlog-wrap{max-width:760px;margin:0 auto;padding:6px 28px 60px}
+.qlog-head h1{font-family:var(--font-read);font-size:28px;font-weight:600;letter-spacing:.4px}
+.qlog-head p{font-size:13px;color:var(--ink-soft);margin-top:8px}
+.ql-item{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:18px 20px;margin-top:14px;cursor:pointer;transition:.18s}
+.ql-item:hover{box-shadow:var(--shadow-sm)}
+.ql-q{display:flex;gap:11px;align-items:flex-start}
+.ql-q .qm{color:var(--amber-deep);font-family:var(--font-read);font-size:20px;line-height:1.1;flex:none;font-weight:600}
+.ql-q .qt{font-size:15px;font-weight:600;line-height:1.5;flex:1}
+.ql-meta{display:flex;align-items:center;gap:10px;margin-top:11px;font-size:12px;color:var(--ink-faint)}
+.ql-meta .uref{color:var(--amber-deep);cursor:pointer;display:inline-flex;align-items:center;gap:5px}
+.ql-meta .uref:hover{text-decoration:underline}
+.ql-a{font-family:var(--font-read);font-size:14px;line-height:1.8;color:var(--ink-soft);margin-top:14px;padding-top:14px;border-top:1px dashed var(--line);display:none}
+.ql-item.open .ql-a{display:block;animation:fade .25s ease}
+.ql-sel{font-family:var(--font-read);font-size:13px;color:var(--ink-soft);background:var(--amber-wash);border-left:3px solid var(--amber);border-radius:8px;padding:9px 12px;margin-bottom:12px}
+
+.foot-note{max-width:760px;margin:40px auto 0;padding:0 28px;font-size:12px;color:var(--ink-faint);line-height:1.7;text-align:center}
+</style>
+</head>
+<body>
+
+<div class="proto-bar">
+  <span class="pmark">知识<span>宇宙</span> · 网页版原型</span>
+  <button data-go="login">登录</button>
+  <button data-go="home" class="on">首页</button>
+  <button data-go="path">学习路径</button>
+  <button data-go="read">单元阅读 ★</button>
+  <button data-go="qlog">提问记录</button>
+</div>
+
+<div class="app">
+
+  <!-- ============ LOGIN ============ -->
+  <section class="screen" id="login">
+    <div class="login-card">
+      <div class="big">知识<span>宇宙</span></div>
+      <div class="tag-line">有结构、有进度、可沉淀的<br>个人学习空间</div>
+      <svg class="pathline" viewBox="0 0 170 44" fill="none">
+        <path d="M6 30 C 40 30, 45 12, 78 12 S 130 32, 164 14" stroke="var(--amber-line)" stroke-width="2.2" stroke-linecap="round" stroke-dasharray="3 6"/>
+        <circle cx="6" cy="30" r="4" fill="var(--amber-deep)"/>
+        <circle cx="78" cy="12" r="4" fill="var(--amber)"/>
+        <circle cx="164" cy="14" r="4" fill="var(--ink)"/>
+      </svg>
+      <div class="field">邮箱地址</div>
+      <div class="field">密码</div>
+      <button class="primary" data-go="home">登录</button>
+      <div class="reg-note">没有账号?直接用邮箱注册即可开始</div>
+      <div class="foot">在电脑上继续你手机里的学习 · 自动同步<br><a data-go="home">用邮箱注册 / 登录 →</a></div>
+    </div>
+  </section>
+
+  <!-- ============ HOME ============ -->
+  <section class="screen active" id="home">
+    <header class="appbar">
+      <div class="word">知识<span>宇宙</span></div>
+      <nav>
+        <a class="cur" data-go="home">我的空间</a>
+        <a data-go="path">学习路径</a>
+        <a data-go="qlog">提问记录</a>
+      </nav>
+      <div class="spacer"></div>
+      <div class="avatar">A</div>
+    </header>
+    <div class="home-wrap">
+      <div class="home-hd">
+        <div class="greet">下午好,Aiyo<small>三个空间在等你,周末适合读读心学</small></div>
+      </div>
+      <div class="section-label">学习空间</div>
+      <div class="grid">
+
+        <div class="space-card" data-go="path">
+          <div class="row1"><div class="nm">AI 产品经理转型</div><span class="tag career">知识职业</span></div>
+          <div class="sub">从产品基础到 AI 产品设计的能力阶梯</div>
+          <div class="prog"><div class="bar"><i style="width:42%"></i></div><span class="n">42%</span></div>
+          <div class="resume"><span class="dot"></span><span class="txt">继续 · <b>需求优先级:RICE 模型与取舍</b></span><span class="go">继续学习 →</span></div>
+        </div>
+
+        <div class="space-card" data-go="read">
+          <div class="row1"><div class="nm">阳明心学</div><span class="tag read">思辨阅读</span></div>
+          <div class="sub">沿《传习录》文本脉络,从知行合一到致良知</div>
+          <div class="prog"><div class="bar"><i style="width:28%"></i></div><span class="n">28%</span></div>
+          <div class="resume"><span class="dot"></span><span class="txt">继续 · <b>"知行合一"究竟合的是什么</b></span><span class="go">继续学习 →</span></div>
+        </div>
+
+        <div class="space-card" data-go="path">
+          <div class="row1"><div class="nm">钢琴入门</div><span class="tag skill">技能练习</span></div>
+          <div class="sub">从坐姿与手型到第一首完整小曲</div>
+          <div class="prog"><div class="bar"><i style="width:60%"></i></div><span class="n">60%</span></div>
+          <div class="resume"><span class="dot"></span><span class="txt">继续 · <b>右手音阶:连贯与放松</b></span><span class="go">继续学习 →</span></div>
+        </div>
+
+        <div class="newspace">
+          <div class="plus">＋</div>
+          <div>新建学习空间</div>
+          <small>Phase 2 · 在电脑上完成入学访谈</small>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ PATH ============ -->
+  <section class="screen" id="path">
+    <header class="appbar">
+      <div class="word">知识<span>宇宙</span></div>
+      <nav>
+        <a data-go="home">我的空间</a>
+        <a class="cur" data-go="path">学习路径</a>
+        <a data-go="qlog">提问记录</a>
+      </nav>
+      <div class="spacer"></div>
+      <div class="avatar">A</div>
+    </header>
+    <div class="path-grid">
+      <div>
+        <div class="path-head">
+          <span class="crumb" data-go="home">← 我的空间</span>
+          <h1>AI 产品经理转型</h1>
+          <div class="meta"><span class="tag career">知识职业</span><span>·</span><span>4 个阶段 · 共 14 单元</span><span>·</span><span>预计 12 周</span></div>
+          <div class="overall"><div class="bar"><i style="width:42%"></i></div><span class="pct">42%</span></div>
+        </div>
+
+        <div class="phase">
+          <div class="phase-h"><span class="idx">1</span><span class="pt">阶段一 · 产品思维与用户洞察</span><span class="ps">4 / 4 已完成</span></div>
+          <div class="units">
+            <div class="unit done"><div><div class="ut">什么是产品经理:角色与边界</div></div><span class="st done">已完成</span></div>
+            <div class="unit done"><div><div class="ut">用户研究:从访谈到洞察</div></div><span class="st done">已完成</span></div>
+            <div class="unit done"><div><div class="ut">用户画像与场景</div></div><span class="st done">已完成</span></div>
+            <div class="unit done"><div><div class="ut">阶段综合:写一份用户洞察简报</div></div><span class="st done">已完成</span></div>
+          </div>
+        </div>
+
+        <div class="phase">
+          <div class="phase-h"><span class="idx">2</span><span class="pt">阶段二 · 需求与优先级</span><span class="ps">2 / 4</span></div>
+          <div class="units">
+            <div class="unit done"><div><div class="ut">需求收集与真伪需求辨别</div></div><span class="st done">已完成</span></div>
+            <div class="unit cur" data-go="read"><div><div class="ut">需求优先级:RICE 模型与取舍</div><div class="us">上次读到这里 · 第 2 小节</div></div><span class="st learning">学习中</span></div>
+            <div class="unit"><div><div class="ut">需求文档(PRD)的结构</div></div><span class="st todo">未生成</span></div>
+            <div class="unit"><div><div class="ut">阶段综合:为一个小功能写 PRD 片段</div></div><span class="st todo">未生成</span></div>
+          </div>
+        </div>
+
+        <div class="phase">
+          <div class="phase-h"><span class="idx">3</span><span class="pt">阶段三 · AI 产品设计</span><span class="ps">0 / 4</span></div>
+          <div class="units">
+            <div class="unit"><div><div class="ut">大模型能力边界与产品机会</div></div><span class="st todo">未生成</span></div>
+            <div class="unit"><div><div class="ut">提示词作为产品界面</div></div><span class="st todo">未生成</span></div>
+          </div>
+        </div>
+      </div>
+
+      <aside class="side">
+        <div class="resume-hero" data-go="read">
+          <small>继续学习</small>
+          <div class="ru">需求优先级:RICE 模型与取舍</div>
+          <div class="rgo">回到第 2 小节 →</div>
+        </div>
+        <div class="minicard">
+          <div class="h">本空间</div>
+          <div class="minirow" data-go="qlog">
+            <span class="mi"><svg viewBox="0 0 24 24"><path d="M8 10h8M8 14h5"/><path d="M21 12a9 9 0 1 1-3.5-7.1L21 5"/></svg></span>
+            <span class="ml">提问记录</span><span class="mc">23</span>
+          </div>
+          <div class="minirow">
+            <span class="mi"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg></span>
+            <span class="ml">关于我 · 记忆</span><span class="mc">Phase 2</span>
+          </div>
+          <div class="minirow">
+            <span class="mi"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 13a7.5 7.5 0 0 0 .1-2l2-1.5-2-3.5-2.4 1a7.5 7.5 0 0 0-1.7-1l-.4-2.5h-4l-.4 2.5a7.5 7.5 0 0 0-1.7 1l-2.4-1-2 3.5 2 1.5a7.5 7.5 0 0 0 0 2l-2 1.5 2 3.5 2.4-1a7.5 7.5 0 0 0 1.7 1l.4 2.5h4l.4-2.5a7.5 7.5 0 0 0 1.7-1l2.4 1 2-3.5z"/></svg></span>
+            <span class="ml">空间设置</span><span class="mc">›</span>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </section>
+
+  <!-- ============ READING ============ -->
+  <section class="screen" id="read">
+    <div class="read-grid" id="readGrid">
+      <!-- left rail -->
+      <div class="read-rail">
+        <div class="rr-sp">AI 产品经理转型</div>
+        <h4>阶段二 · 需求与优先级</h4>
+        <div class="rr-unit done"><span class="d"></span>需求收集与真伪需求辨别</div>
+        <div class="rr-unit cur"><span class="d"></span>需求优先级:RICE 模型与取舍</div>
+        <div class="rr-unit" data-gen="1"><span class="d"></span>需求文档(PRD)的结构</div>
+        <div class="rr-unit" data-gen="1"><span class="d"></span>阶段综合:写一份 PRD 片段</div>
+        <h4>阶段三 · AI 产品设计</h4>
+        <div class="rr-unit" data-gen="1"><span class="d"></span>大模型能力边界与产品机会</div>
+        <div class="rr-unit" data-gen="1"><span class="d"></span>提示词作为产品界面</div>
+      </div>
+
+      <!-- center reading -->
+      <div class="reading">
+        <!-- generated unit -->
+        <div class="read-inner" id="unitBody">
+          <div class="rd-top">
+            <button class="railtoggle" id="railToggle" title="收起 / 展开目录">
+              <svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h10M4 18h16"/></svg>
+            </button>
+            <div>
+              <div class="rd-kicker">阶段二 · 需求与优先级 · 第 6 单元</div>
+            </div>
+          </div>
+          <div class="rd-title">需求优先级:RICE 模型与取舍</div>
+          <div class="rd-guide">这一单元学的是,当需求多到做不完时,怎么决定先做哪个。我们会用 RICE 这个可量化的框架把"凭感觉排"变成"摆到台面上算",并且看清它的局限——优先级最终仍是一种判断,不是公式。</div>
+
+          <div class="rd-goals">
+            <div class="gh">学完本单元你将能够</div>
+            <li>用 Reach / Impact / Confidence / Effort 四个维度拆解一个需求</li>
+            <li>算出 RICE 分数并解释它意味着什么</li>
+            <li>说清楚 RICE 在什么情况下会误导你</li>
+          </div>
+
+          <div class="rd-h2" id="h2-1">为什么需要一个优先级框架</div>
+          <p class="para">作为产品经理,你几乎永远处在"需求比工期多"的状态。利益相关方各有各的诉求,每个听起来都重要。如果靠开会时谁声音大、谁职位高来决定先做什么,团队会逐渐失去对"我们到底在为什么排序"的共识。</p>
+          <p class="para">优先级框架的价值不在于给出唯一正确答案,而在于把判断的依据摆到台面上,让取舍变成一场可以讨论的对话,而不是一次拍脑袋。RICE 是其中最常用、也最容易上手的一个。</p>
+
+          <div class="rd-h2" id="h2-2">RICE 的四个维度</div>
+          <p class="para"><b>Reach(触达)</b>:这个需求在一个周期内会影响多少用户。通常用一个具体数字估计,比如"每月约 2,000 个下单用户会用到"。它逼你回答一个常被跳过的问题:这件事到底关系到多少人。</p>
+          <p class="para"><b>Impact(影响)</b>:对每个被触达的用户,这件事的影响有多大。RICE 通常用一组档位来打分——巨大、高、中、低、微小——避免假装能精确量化一件本质上模糊的事。</p>
+          <p class="para"><b>Confidence(信心)</b>:你对前面这些估计有多大把握。它是一个百分比,作用是给那些"听起来很美但证据很薄"的需求降权。一个高信心的中等需求,常常比一个低信心的"颠覆性"需求更值得先做。</p>
+          <p class="para"><b>Effort(投入)</b>:做这件事大约要花多少人/月。它是唯一放在分母上的项——同样的收益,越省力的越靠前。</p>
+
+          <div class="rd-card"><b>RICE 分数 =（Reach × Impact × Confidence）÷ Effort。</b>分子是"这件事值多少",分母是"它要花多少"。分数本身没有绝对意义,它的用处是让你把一堆需求放在同一把尺子上横向比较。</div>
+
+          <div class="rd-h2" id="h2-3">它会在哪里误导你</div>
+          <p class="para">RICE 最大的陷阱,是让人误以为优先级是算出来的。四个维度里有三个是估计值,信心一项更是对估计的估计——任何一处乐观,分数就会失真。把它当成"对话的起点"而非"结论",才是用对了它。</p>
+          <p class="para">另一个盲区是:RICE 天然偏爱"能被量化、见效快"的需求,容易系统性地低估那些回报慢但根基性的工作,比如技术债、可访问性、长期信任。这类需求往往 Reach 难估、Impact 滞后,在公式里天生吃亏,需要你手动把它们拎出来单独对待。</p>
+
+          <div class="rd-actions">
+            <button class="primary"><svg viewBox="0 0 24 24"><path d="M5 12l5 5L20 7"/></svg>标记学完</button>
+            <button class="ghost" data-gen="1">下一单元 →</button>
+          </div>
+        </div>
+
+        <!-- generating state (for ungenerated unit) -->
+        <div class="genwrap" id="genWrap">
+          <div class="ring"></div>
+          <h3>正在为你生成这一单元…</h3>
+          <p>AI 正结合你的学习档案(8 年产品经验、偏好案例驱动)按"知识职业型"模板撰写。生成后会永久保存,下次直接打开。</p>
+        </div>
+      </div>
+
+      <!-- right TOC -->
+      <div class="toc">
+        <div class="th">本单元目录</div>
+        <a class="cur" data-toc="h2-1">为什么需要框架</a>
+        <a data-toc="h2-2">RICE 的四个维度</a>
+        <a data-toc="h2-3">它会在哪里误导你</a>
+        <div class="hint">选中正文任意文字,即可就地问 AI —— 它带着你的档案作答。</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ QUESTION LOG ============ -->
+  <section class="screen" id="qlog">
+    <header class="appbar">
+      <div class="word">知识<span>宇宙</span></div>
+      <nav>
+        <a data-go="home">我的空间</a>
+        <a data-go="path">学习路径</a>
+        <a class="cur" data-go="qlog">提问记录</a>
+      </nav>
+      <div class="spacer"></div>
+      <div class="avatar">A</div>
+    </header>
+    <div class="qlog-wrap">
+      <div class="qlog-head">
+        <h1>提问记录</h1>
+        <p>AI 产品经理转型 · 阅读现场的提问,都在这里集中沉淀 · 共 23 条</p>
+      </div>
+
+      <div class="ql-item open">
+        <div class="ql-q"><span class="qm">问</span><span class="qt">Confidence 那个百分比到底怎么估,会不会很主观?</span></div>
+        <div class="ql-meta"><span>今天 14:32</span><span>·</span><span class="uref" data-go="read">↩ 需求优先级:RICE 模型与取舍</span></div>
+        <div class="ql-a">
+          <div class="ql-sel">你对前面这些估计有多大把握。它是一个百分比……</div>
+          <p>会有主观成分,但有办法约束它。一个实用做法是把百分比绑定到证据等级:有线上数据支撑→80% 以上;有用户访谈但没数据→50% 左右;纯团队假设→20% 以下。这样它就不再是"感觉",而是"我手上有多硬的证据"。结合你做过用户研究的背景,你其实比多数人更容易给出有依据的 Confidence。</p>
+        </div>
+      </div>
+
+      <div class="ql-item">
+        <div class="ql-q"><span class="qm">问</span><span class="qt">RICE 和 KANO 模型有什么区别,该用哪个?</span></div>
+        <div class="ql-meta"><span>今天 14:20</span><span>·</span><span class="uref" data-go="read">↩ 需求优先级:RICE 模型与取舍</span></div>
+        <div class="ql-a">
+          <p>一句话:RICE 帮你排"先做哪个",KANO 帮你判"这个值不值得做"。前者排序、后者分类,实际工作里常常先用 KANO 把需求分成基础/期望/兴奋型,再用 RICE 在同一类里排序。</p>
+        </div>
+      </div>
+
+      <div class="ql-item">
+        <div class="ql-q"><span class="qm">问</span><span class="qt">技术债这种需求在 RICE 里总是吃亏,有什么补救办法?</span></div>
+        <div class="ql-meta"><span>今天 14:08</span><span>·</span><span class="uref" data-go="read">↩ 需求优先级:RICE 模型与取舍</span></div>
+        <div class="ql-a">
+          <p>常见做法是给这类"根基性工作"单独留出固定配额(比如每个迭代 20% 的工程量),不让它们跟功能需求在同一个 RICE 池子里竞争。否则它们会被永远推后,直到爆雷。</p>
+        </div>
+      </div>
+    </div>
+    <div class="foot-note">提问记录与单元内容相互独立 —— 同一段问几次、换种问法,都不会改动正文。点单元标签可跳回原文。</div>
+  </section>
+
+</div>
+
+<!-- selection bubble + ask drawer (global) -->
+<div class="selbubble" id="selBubble"><svg viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-8.5 8.5 8.5 8.5 0 0 1-3.9-.9L3 21l1.9-5.6A8.5 8.5 0 1 1 21 11.5z"/></svg>问 AI</div>
+
+<div class="scrim" id="scrim"></div>
+<aside class="drawer" id="drawer">
+  <div class="dr-h">
+    <div class="t"><span class="badge">问</span>问 AI</div>
+    <div class="x" id="drawerClose">✕</div>
+  </div>
+  <div class="dr-scroll">
+    <div class="quote" id="askQuote">（你选中的文字会显示在这里）</div>
+    <div class="chips">
+      <span class="chip">展开讲讲</span>
+      <span class="chip">举个例子</span>
+      <span class="chip">联系我的背景</span>
+      <span class="chip">太难了,简单点</span>
+    </div>
+    <div class="loading" id="askLoading"><span class="spin"></span>AI 正在思考…</div>
+    <div class="answer" id="askAnswer">
+      <div class="alabel">◆ 结合你的学习档案</div>
+      <p>这里的关键是把它放回你已经熟悉的场景里。你做过 8 年产品、跑过用户研究,所以可以这样理解——</p>
+      <div class="ex">这个维度本质上是在问"我手上的证据有多硬"。你在做用户访谈时对"真需求/伪需求"的那套判断,迁移过来几乎可以直接用:有数据支撑的,信心高;只有零星反馈的,信心低。</div>
+      <p>换句话说,它不是要你凭空给个数字,而是逼你<b>诚实标注自己估计的可靠程度</b>。这恰好是你的强项,不必当成新概念去记。</p>
+    </div>
+  </div>
+  <div class="dr-foot">
+    <div class="ask-input">
+      <input id="askInput" placeholder="就选中的内容追问…">
+      <span class="send" id="askSend"><svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+    </div>
+    <div class="kbd">选中文字后按 <b>⌘K</b> 也能唤起 · <b>Enter</b> 发送</div>
+  </div>
+</aside>
+
+<script>
+// ---------- screen switching ----------
+const screens = document.querySelectorAll('.screen');
+const navBtns = document.querySelectorAll('.proto-bar button[data-go]');
+function go(id){
+  screens.forEach(s=>s.classList.toggle('active', s.id===id));
+  navBtns.forEach(b=>b.classList.toggle('on', b.dataset.go===id));
+  window.scrollTo({top:0});
+  closeDrawer();
+  if(id!=='read'){ resetUnit(); }
+}
+document.body.addEventListener('click', e=>{
+  const t = e.target.closest('[data-go]');
+  if(t){ go(t.dataset.go); }
+});
+
+// ---------- reading: rail toggle ----------
+const readGrid = document.getElementById('readGrid');
+document.getElementById('railToggle').addEventListener('click', ()=>{
+  readGrid.classList.toggle('rail-collapsed');
+});
+
+// ---------- reading: TOC scroll spy + jump ----------
+document.querySelectorAll('.toc a[data-toc]').forEach(a=>{
+  a.addEventListener('click', ()=>{
+    document.getElementById(a.dataset.toc)?.scrollIntoView({behavior:'smooth'});
+  });
+});
+
+// ---------- generating state demo ----------
+const genWrap = document.getElementById('genWrap');
+const unitBody = document.getElementById('unitBody');
+function resetUnit(){ genWrap.classList.remove('show'); unitBody.style.display='block'; }
+document.querySelectorAll('[data-gen]').forEach(el=>{
+  el.addEventListener('click', (e)=>{
+    e.stopPropagation();
+    go('read');
+    unitBody.style.display='none';
+    genWrap.classList.add('show');
+    setTimeout(()=>{ genWrap.classList.remove('show'); unitBody.style.display='block'; window.scrollTo({top:0}); }, 2200);
+  });
+});
+
+// ---------- the soul: select text -> bubble -> ask drawer ----------
+const bubble = document.getElementById('selBubble');
+const reading = document.querySelector('#read .reading');
+let lastText = '';
+
+function clearBubble(){ bubble.classList.remove('show'); }
+reading.addEventListener('mouseup', ()=>{
+  setTimeout(()=>{
+    const sel = window.getSelection();
+    const text = sel.toString().trim();
+    if(text.length >= 2 && reading.contains(sel.anchorNode)){
+      const rect = sel.getRangeAt(0).getBoundingClientRect();
+      bubble.style.left = (rect.left + rect.width/2) + 'px';
+      bubble.style.top  = rect.top + 'px';
+      bubble.classList.add('show');
+      lastText = text;
+    } else { clearBubble(); }
+  }, 10);
+});
+document.addEventListener('mousedown', e=>{
+  if(!bubble.contains(e.target)) clearBubble();
+});
+window.addEventListener('scroll', clearBubble, true);
+
+bubble.addEventListener('click', ()=>{ openDrawer(lastText); clearBubble(); });
+
+// ⌘K / Ctrl+K shortcut
+document.addEventListener('keydown', e=>{
+  if((e.metaKey||e.ctrlKey) && e.key.toLowerCase()==='k'){
+    const text = window.getSelection().toString().trim();
+    if(text.length>=2){ e.preventDefault(); openDrawer(text); clearBubble(); }
+  }
+  if(e.key==='Escape') closeDrawer();
+});
+
+// ---------- ask drawer ----------
+const drawer = document.getElementById('drawer');
+const scrim = document.getElementById('scrim');
+const askQuote = document.getElementById('askQuote');
+const askLoading = document.getElementById('askLoading');
+const askAnswer = document.getElementById('askAnswer');
+const askInput = document.getElementById('askInput');
+
+function openDrawer(text){
+  askQuote.textContent = text || '（你选中的文字）';
+  askAnswer.classList.remove('show');
+  askLoading.classList.remove('show');
+  askInput.value='';
+  drawer.classList.add('show'); scrim.classList.add('show');
+}
+function closeDrawer(){ drawer.classList.remove('show'); scrim.classList.remove('show'); }
+function runAsk(){
+  askAnswer.classList.remove('show');
+  askLoading.classList.add('show');
+  setTimeout(()=>{ askLoading.classList.remove('show'); askAnswer.classList.add('show'); }, 950);
+}
+document.getElementById('drawerClose').addEventListener('click', closeDrawer);
+scrim.addEventListener('click', closeDrawer);
+document.getElementById('askSend').addEventListener('click', runAsk);
+askInput.addEventListener('keydown', e=>{ if(e.key==='Enter') runAsk(); });
+document.querySelectorAll('.chip').forEach(c=> c.addEventListener('click', ()=>{ askInput.value=c.textContent; runAsk(); }));
+
+// ---------- question log expand ----------
+document.querySelectorAll('.ql-item').forEach(it=>{
+  it.addEventListener('click', e=>{
+    if(e.target.closest('.uref')) return;
+    it.classList.toggle('open');
+  });
+});
+
+// start on home
+go('home');
+</script>
+</body>
+</html>

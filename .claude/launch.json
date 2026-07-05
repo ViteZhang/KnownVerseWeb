@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "kvweb",
+      "runtimeExecutable": "bash",
+      "runtimeArgs": ["-c", "cd /Volumes/Files/workspace/KnowledgeverseWeb && exec npm run dev"],
+      "port": 3000
+    }
+  ]
+}
