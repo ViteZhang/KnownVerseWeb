@@ -18,6 +18,8 @@ html,body{height:100%}
 body{
   font-family:var(--font-ui); color:var(--ink);
   background:radial-gradient(1400px 700px at 50% -8%, #F0EADF 0%, rgba(240,234,223,0) 58%),linear-gradient(180deg,#EFE9DE 0%, #E7E0D3 100%);
+  background-repeat:no-repeat;
+  background-attachment:fixed;
   min-height:100vh;
 }
 ::selection{background:var(--amber-wash)}
