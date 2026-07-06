@@ -94,7 +94,9 @@ a{color:inherit;text-decoration:none}
 .resume .txt b{color:var(--ink);font-weight:600}
 .resume .go{margin-left:auto;font-size:12px;font-weight:600;color:var(--amber-deep);flex:none}
 .newspace{border:1.5px dashed var(--line);border-radius:20px;padding:18px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:var(--ink-soft);font-size:14px;font-weight:500;cursor:default;transition:.18s;min-height:172px;background:transparent}
-.newspace .plus{width:40px;height:40px;border-radius:50%;background:var(--surface-2);display:grid;place-items:center;font-size:22px;color:var(--amber-deep)}
+.newspace:hover{border-color:var(--amber-line);border-style:solid;color:var(--amber-deep);transform:translateY(-2px);box-shadow:var(--shadow)}
+.newspace:hover .plus{background:var(--amber-wash)}
+.newspace .plus{width:40px;height:40px;border-radius:50%;background:var(--surface-2);display:grid;place-items:center;font-size:22px;color:var(--amber-deep);transition:.18s}
 .newspace small{font-size:11.5px;color:var(--ink-faint)}
 
 /* ============ PATH (two-pane) ============ */
