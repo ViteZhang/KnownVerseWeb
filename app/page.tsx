@@ -92,11 +92,11 @@ export default function HomePage() {
               );
             })}
 
-            <div className="newspace">
+            <Link href="/new" className="newspace" style={{ cursor: 'pointer' }}>
               <div className="plus">＋</div>
               <div>新建学习空间</div>
-              <small>Phase 2 · 在电脑上完成入学访谈</small>
-            </div>
+              <small>在电脑上完成入学访谈</small>
+            </Link>
           </div>
         )}
       </div>

@@ -180,7 +180,7 @@ export default function PathPage({ params }: { params: { id: string } }) {
               <span className="ml">提问记录</span>
               <span className="mc">›</span>
             </Link>
-            <div className="minirow" style={{ cursor: 'default' }}>
+            <Link className="minirow" href="/about" style={{ textDecoration: 'none' }}>
               <span className="mi">
                 <svg viewBox="0 0 24 24">
                   <circle cx="12" cy="8" r="4" />
@@ -188,8 +188,8 @@ export default function PathPage({ params }: { params: { id: string } }) {
                 </svg>
               </span>
               <span className="ml">关于我 · 记忆</span>
-              <span className="mc">Phase 2</span>
-            </div>
+              <span className="mc">›</span>
+            </Link>
           </div>
         </aside>
       </div>

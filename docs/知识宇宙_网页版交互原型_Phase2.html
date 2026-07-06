@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>知识宇宙 · 网页版交互原型 Phase 2</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Serif+SC:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#FAF8F3; --surface:#FFFFFF; --surface-2:#F6F2EA;
+  --ink:#20242E; --ink-soft:#565B66; --ink-faint:#9A9EA8;
+  --line:#ECE6DB; --line-soft:#F3EEE5;
+  --amber:#DD9527; --amber-deep:#B0701A; --amber-wash:rgba(221,149,39,.18); --amber-line:rgba(221,149,39,.5);
+  --sage:#5E7A6B; --sage-wash:rgba(94,122,107,.14); --danger:#C0584B;
+  --shadow-sm:0 1px 2px rgba(30,32,40,.05);
+  --shadow:0 1px 2px rgba(30,32,40,.04),0 10px 28px rgba(30,32,40,.07);
+  --shadow-lg:0 24px 60px rgba(30,32,40,.18);
+  --font-ui:"Inter","PingFang SC","Hiragino Sans GB","Microsoft YaHei",system-ui,sans-serif;
+  --font-read:"Noto Serif SC","Songti SC","STSong",Georgia,serif;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{font-family:var(--font-ui);color:var(--ink);
+  background:radial-gradient(1400px 700px at 50% -8%, #F0EADF 0%, rgba(240,234,223,0) 58%),linear-gradient(180deg,#EFE9DE 0%, #E7E0D3 100%);
+  min-height:100vh}
+::selection{background:var(--amber-wash)}
+button{font-family:inherit}
+
+.proto-bar{position:sticky;top:0;z-index:200;display:flex;align-items:center;gap:8px;justify-content:center;flex-wrap:wrap;
+  padding:11px 16px;background:rgba(247,243,236,.82);backdrop-filter:blur(10px);border-bottom:1px solid rgba(0,0,0,.05)}
+.proto-bar .pmark{font-weight:700;font-size:13px;letter-spacing:.4px;margin-right:6px}
+.proto-bar .pmark span{color:var(--amber-deep)}
+.proto-bar button{font-size:12.5px;color:#6E6859;background:rgba(255,255,255,.6);border:1px solid rgba(0,0,0,.06);
+  padding:7px 14px;border-radius:999px;cursor:pointer;transition:.16s}
+.proto-bar button:hover{background:#fff;color:var(--ink)}
+.proto-bar button.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+
+.app{max-width:1240px;margin:0 auto;min-height:calc(100vh - 50px)}
+.screen{display:none}
+.screen.active{display:block;animation:fade .3s ease}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+.appbar{display:flex;align-items:center;gap:24px;padding:20px 28px 18px}
+.appbar .word{font-size:21px;font-weight:700;letter-spacing:.5px}
+.appbar .word span{color:var(--amber-deep)}
+.appbar nav{display:flex;gap:6px;margin-left:6px}
+.appbar nav a{font-size:13.5px;color:var(--ink-soft);padding:7px 13px;border-radius:10px;cursor:pointer;transition:.15s}
+.appbar nav a:hover{background:rgba(255,255,255,.6);color:var(--ink)}
+.appbar nav a.cur{color:var(--ink);font-weight:600;background:#fff;box-shadow:var(--shadow-sm)}
+.appbar .spacer{flex:1}
+.appbar .avatar{width:38px;height:38px;border-radius:50%;background:var(--ink);color:#fff;display:grid;place-items:center;font-weight:600;font-size:15px;cursor:pointer;flex:none}
+
+.primary{background:var(--ink);color:#fff;border:none;border-radius:14px;padding:13px 20px;font-size:14px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:8px;transition:.18s}
+.primary:hover{transform:translateY(-1px);box-shadow:var(--shadow)}
+.primary:disabled{opacity:.4;cursor:default;transform:none;box-shadow:none}
+.primary svg{width:16px;height:16px;stroke:var(--amber);fill:none;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
+.ghost{background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:12px;padding:10px 16px;font-size:13px;font-weight:600;cursor:pointer;transition:.15s}
+.ghost:hover{border-color:var(--amber-line);color:var(--amber-deep)}
+.crumb{font-size:12.5px;color:var(--ink-faint);cursor:pointer;display:inline-flex;align-items:center;gap:6px;margin-bottom:14px}
+.crumb:hover{color:var(--amber-deep)}
+.tag{font-size:10.5px;font-weight:600;padding:3px 10px;border-radius:999px;white-space:nowrap;letter-spacing:.3px}
+.tag.skill{background:#E9EFEA;color:var(--sage)}
+
+/* ========= NEW SPACE (single adaptive input) ========= */
+.ns-wrap{max-width:680px;margin:0 auto;padding:40px 28px 60px;text-align:center}
+.ns-badge{width:56px;height:56px;border-radius:18px;background:var(--ink);display:grid;place-items:center;margin:0 auto 22px;color:var(--amber);font-size:26px;font-family:var(--font-read)}
+.ns-wrap h1{font-family:var(--font-read);font-size:29px;font-weight:600;letter-spacing:.5px}
+.ns-wrap .lead{font-size:14.5px;color:var(--ink-soft);margin-top:14px;line-height:1.7}
+.ns-box{background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:8px;margin-top:28px;box-shadow:var(--shadow);text-align:left}
+.ns-box textarea{width:100%;border:none;outline:none;resize:none;background:transparent;font-family:var(--font-read);font-size:16px;line-height:1.75;color:var(--ink);padding:16px 16px 6px;min-height:120px}
+.ns-box textarea::placeholder{color:var(--ink-faint)}
+.ns-box .ns-foot{display:flex;align-items:center;justify-content:space-between;padding:8px 12px 10px}
+.ns-hint{font-size:12px;color:var(--ink-faint)}
+.ns-examples{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:20px}
+.ns-ex{font-size:12.5px;color:var(--ink-soft);background:var(--surface);border:1px dashed var(--line);border-radius:999px;padding:8px 14px;cursor:pointer;transition:.15s}
+.ns-ex:hover{border-color:var(--amber-line);color:var(--amber-deep);border-style:solid}
+
+/* ========= INTERVIEW (desktop chat) ========= */
+.iv-wrap{max-width:720px;margin:0 auto;padding:6px 28px 40px;min-height:calc(100vh - 130px);display:flex;flex-direction:column}
+.iv-top{display:flex;align-items:center;gap:12px;padding:6px 2px 18px}
+.iv-top .dot{width:8px;height:8px;border-radius:50%;background:var(--sage);box-shadow:0 0 0 4px var(--sage-wash)}
+.iv-top .t{font-size:14px;font-weight:600}
+.iv-top .p{margin-left:auto;font-size:12px;color:var(--ink-faint)}
+.iv-scroll{flex:1;display:flex;flex-direction:column;gap:16px;padding:6px 2px 20px}
+.bubble{max-width:78%;font-size:14.5px;line-height:1.7;padding:13px 17px;border-radius:16px;animation:fade .3s ease}
+.bubble.ai{align-self:flex-start;background:var(--surface);border:1px solid var(--line);border-bottom-left-radius:5px;color:var(--ink)}
+.bubble.me{align-self:flex-end;background:var(--ink);color:#fff;border-bottom-right-radius:5px}
+.bubble.ai .lead-in{color:var(--ink-faint);font-size:13px;display:block;margin-bottom:5px}
+.typing{align-self:flex-start;display:flex;gap:5px;padding:15px 18px;background:var(--surface);border:1px solid var(--line);border-radius:16px;border-bottom-left-radius:5px}
+.typing i{width:7px;height:7px;border-radius:50%;background:var(--ink-faint);animation:bob 1s infinite}
+.typing i:nth-child(2){animation-delay:.15s}.typing i:nth-child(3){animation-delay:.3s}
+@keyframes bob{0%,60%,100%{opacity:.3;transform:translateY(0)}30%{opacity:1;transform:translateY(-4px)}}
+.iv-done{align-self:center;text-align:center;margin-top:8px;animation:fade .4s ease}
+.iv-done .primary{margin-top:4px}
+.iv-input{position:sticky;bottom:0;background:linear-gradient(180deg,rgba(239,233,222,0),#EBE4D7 30%);padding:14px 2px 20px}
+.iv-input .box{display:flex;align-items:flex-end;gap:10px;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:10px 12px;box-shadow:var(--shadow-sm)}
+.iv-input .box:focus-within{border-color:var(--amber-line)}
+.iv-input textarea{flex:1;border:none;outline:none;resize:none;background:transparent;font-family:var(--font-ui);font-size:14.5px;line-height:1.5;color:var(--ink);max-height:120px;padding:5px 4px}
+.iv-input .send{width:36px;height:36px;border-radius:50%;background:var(--amber);display:grid;place-items:center;flex:none;cursor:pointer;transition:.15s}
+.iv-input .send:hover{background:var(--amber-deep)}
+.iv-input .send svg{width:16px;height:16px;stroke:#fff;fill:none;stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round}
+
+/* ========= CONFIRMATION ========= */
+.cf-wrap{max-width:720px;margin:0 auto;padding:6px 28px 60px}
+.cf-head{text-align:center;margin-bottom:8px}
+.cf-head h1{font-family:var(--font-read);font-size:27px;font-weight:600;letter-spacing:.4px}
+.cf-head p{font-size:13.5px;color:var(--ink-soft);margin-top:12px;line-height:1.65}
+.cf-card{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:18px 20px;margin-top:14px;transition:.15s}
+.cf-card:hover{box-shadow:var(--shadow-sm)}
+.cf-card .ch{display:flex;align-items:center;gap:9px;margin-bottom:11px}
+.cf-card .ci{width:28px;height:28px;border-radius:9px;background:var(--surface-2);display:grid;place-items:center;flex:none}
+.cf-card .ci svg{width:15px;height:15px;stroke:var(--amber-deep);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.cf-card .cl{font-size:12px;font-weight:700;letter-spacing:.5px;color:var(--ink-faint);text-transform:uppercase}
+.cf-card .edit{margin-left:auto;font-size:12px;color:var(--amber-deep);cursor:pointer;font-weight:600}
+.cf-card .cbody{font-family:var(--font-read);font-size:15px;line-height:1.75;color:#2B2F39}
+.cf-card .cbody[contenteditable="true"]{outline:none;background:var(--amber-wash);border-radius:8px;padding:8px 10px;margin:-8px -10px}
+.cf-infer{background:linear-gradient(180deg,#FBF4E6,#FAF8F3);border:1px solid var(--amber-line);border-radius:16px;padding:18px 20px;margin-top:14px}
+.cf-infer .ih{font-size:12px;font-weight:700;letter-spacing:.4px;color:var(--amber-deep);margin-bottom:5px;display:flex;align-items:center;gap:7px}
+.cf-infer .isub{font-size:12px;color:var(--ink-soft);margin-bottom:14px}
+.infer-row{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px dashed rgba(176,112,26,.25)}
+.infer-row:last-child{border-bottom:0}
+.infer-row .il{font-size:12.5px;color:var(--ink-soft);width:72px;flex:none}
+.infer-row .iv-val{font-size:14px;font-weight:600;flex:1}
+.infer-row .ireason{font-size:11.5px;color:var(--ink-faint)}
+.infer-row .ichange{font-size:11.5px;color:var(--amber-deep);cursor:pointer;font-weight:600}
+.cf-actions{display:flex;gap:12px;margin-top:24px}
+.cf-actions .primary{flex:1;padding:15px}
+
+/* generating overlay */
+.genwrap{display:none;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:90px 30px;min-height:400px}
+.genwrap.show{display:flex;animation:fade .3s ease}
+.genwrap .ring{width:44px;height:44px;border:3px solid var(--line);border-top-color:var(--amber);border-radius:50%;animation:rot .8s linear infinite;margin-bottom:20px}
+@keyframes rot{to{transform:rotate(360deg)}}
+.genwrap h3{font-family:var(--font-read);font-size:19px;font-weight:600;margin-bottom:12px}
+.genwrap p{font-size:13.5px;color:var(--ink-soft);line-height:1.7;max-width:360px}
+.gen-done{display:none;flex-direction:column;align-items:center;text-align:center;padding:80px 30px;min-height:400px}
+.gen-done.show{display:flex;animation:fade .4s ease}
+.gen-done .check{width:56px;height:56px;border-radius:50%;background:var(--sage-wash);display:grid;place-items:center;margin-bottom:20px}
+.gen-done .check svg{width:28px;height:28px;stroke:var(--sage);fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
+.gen-done h3{font-family:var(--font-read);font-size:21px;font-weight:600;margin-bottom:10px}
+.gen-done p{font-size:13.5px;color:var(--ink-soft);margin-bottom:22px}
+
+/* ========= MEMORY (关于我) ========= */
+.mm-wrap{max-width:680px;margin:0 auto;padding:6px 28px 60px}
+.mm-head h1{font-family:var(--font-read);font-size:27px;font-weight:600;letter-spacing:.4px}
+.mm-head p{font-size:13px;color:var(--ink-soft);margin-top:10px;line-height:1.65}
+.mm-head .note{font-size:12px;color:var(--ink-faint);background:var(--amber-wash);border-radius:10px;padding:11px 14px;margin-top:16px;line-height:1.6}
+.mm-group{margin-top:26px}
+.mm-gh{font-size:11.5px;font-weight:700;letter-spacing:.8px;color:var(--ink-faint);text-transform:uppercase;margin-bottom:10px;padding-left:2px}
+.mm-item{background:var(--surface);border:1px solid var(--line);border-radius:13px;padding:13px 14px 13px 16px;margin-bottom:9px;display:flex;align-items:flex-start;gap:12px;transition:.15s}
+.mm-item:hover{box-shadow:var(--shadow-sm)}
+.mm-item .txt{flex:1;font-size:14px;line-height:1.6;color:#2B2F39}
+.mm-item .txt[contenteditable="true"]{outline:none;background:var(--amber-wash);border-radius:7px;padding:6px 9px;margin:-6px -9px}
+.mm-item .acts{display:flex;gap:4px;flex:none;opacity:0;transition:.15s}
+.mm-item:hover .acts{opacity:1}
+.mm-item .act{width:28px;height:28px;border-radius:8px;display:grid;place-items:center;cursor:pointer;color:var(--ink-faint);transition:.15s}
+.mm-item .act:hover{background:var(--surface-2);color:var(--ink)}
+.mm-item .act.del:hover{color:var(--danger)}
+.mm-item .act svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.mm-add{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--ink-soft);border:1px dashed var(--line);border-radius:11px;padding:11px 14px;cursor:pointer;transition:.15s}
+.mm-add:hover{border-color:var(--amber-line);color:var(--amber-deep)}
+.mm-add .plus{font-size:16px;color:var(--amber-deep)}
+
+/* ========= READING PREFERENCES ========= */
+.rp-wrap{max-width:900px;margin:0 auto;padding:6px 28px 60px;display:grid;grid-template-columns:300px 1fr;gap:28px;align-items:start}
+@media(max-width:820px){.rp-wrap{grid-template-columns:1fr}}
+.rp-panel{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:22px;position:sticky;top:70px}
+.rp-panel h2{font-size:15px;font-weight:600;margin-bottom:4px}
+.rp-panel .sub{font-size:12px;color:var(--ink-faint);margin-bottom:20px}
+.rp-field{margin-bottom:22px}
+.rp-field .fl{font-size:12.5px;font-weight:600;color:var(--ink-soft);margin-bottom:10px}
+.seg{display:flex;background:var(--surface-2);border-radius:11px;padding:3px;gap:3px}
+.seg button{flex:1;border:none;background:transparent;font-size:12.5px;color:var(--ink-soft);padding:8px 0;border-radius:8px;cursor:pointer;transition:.15s;font-weight:500}
+.seg button.on{background:#fff;color:var(--ink);font-weight:600;box-shadow:var(--shadow-sm)}
+.kbd-list{border-top:1px solid var(--line);padding-top:18px;margin-top:4px}
+.kbd-list .kh{font-size:11.5px;font-weight:700;letter-spacing:.6px;color:var(--ink-faint);text-transform:uppercase;margin-bottom:12px}
+.kbd-row{display:flex;align-items:center;justify-content:space-between;padding:7px 0;font-size:13px;color:var(--ink-soft)}
+.kbd-row b{font-family:var(--font-ui);background:var(--surface-2);border:1px solid var(--line);border-radius:6px;padding:2px 8px;font-weight:600;font-size:11.5px;color:var(--ink)}
+.rp-preview{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:34px 40px;box-shadow:var(--shadow-sm)}
+.rp-preview .pv-label{font-size:11px;font-weight:600;letter-spacing:.8px;color:var(--ink-faint);text-transform:uppercase;margin-bottom:18px}
+.rp-preview .pv-body{margin:0 auto;transition:.2s}
+.rp-preview h3{font-family:var(--font-read);font-weight:600;margin-bottom:16px}
+.rp-preview p{font-family:var(--font-read);color:#2B2F39;margin-bottom:15px}
+</style>
+</head>
+<body>
+
+<div class="proto-bar">
+  <span class="pmark">知识<span>宇宙</span> · 网页版原型 · Phase 2</span>
+  <button data-go="newspace" class="on">新建空间</button>
+  <button data-go="interview">入学访谈 ★</button>
+  <button data-go="confirm">理解确认</button>
+  <button data-go="memory">关于我 · 记忆</button>
+  <button data-go="prefs">阅读偏好</button>
+</div>
+
+<div class="app">
+
+  <!-- ===== NEW SPACE ===== -->
+  <section class="screen active" id="newspace">
+    <header class="appbar">
+      <div class="word">知识<span>宇宙</span></div>
+      <div class="spacer"></div>
+      <div class="avatar">A</div>
+    </header>
+    <div class="ns-wrap">
+      <div class="ns-badge">新</div>
+      <h1>你想学点什么?</h1>
+      <div class="lead">一句话或一段话都行——想学什么、现在的基础、想到什么程度、大概能投入多少时间。<br>说得越具体,AI 追问越少。</div>
+      <div class="ns-box">
+        <textarea id="nsInput" placeholder="例如:我想学摄影,能拍好旅行时的风景和人像。有一台微单但一直用自动挡……"></textarea>
+        <div class="ns-foot">
+          <span class="ns-hint">AI 会先和你聊几句,补全它需要了解的信息</span>
+          <button class="primary" id="nsStart"><svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg>开始</button>
+        </div>
+      </div>
+      <div class="ns-examples">
+        <span class="ns-ex" data-ex="我想学摄影,能拍好旅行时的风景和人像。有一台微单但一直用自动挡。">摄影入门</span>
+        <span class="ns-ex" data-ex="想系统读一遍西方哲学史,有点哲学基础,以理解为主。">西方哲学史</span>
+        <span class="ns-ex" data-ex="备考 PMP,有 5 年项目经验,想两个月内考过。">PMP 备考</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== INTERVIEW ===== -->
+  <section class="screen" id="interview">
+    <header class="appbar">
+      <div class="word">知识<span>宇宙</span></div>
+      <div class="spacer"></div>
+      <div class="avatar">A</div>
+    </header>
+    <div class="iv-wrap">
+      <div class="iv-top"><span class="dot"></span><span class="t">入学访谈</span><span class="p" id="ivProg">了解中…</span></div>
+      <div class="iv-scroll" id="ivScroll"></div>
+      <div class="iv-input" id="ivInputBar">
+        <div class="box">
+          <textarea id="ivInput" rows="1" placeholder="回复…"></textarea>
+          <span class="send" id="ivSend"><svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== CONFIRM ===== -->
+  <section class="screen" id="confirm">
+    <header class="appbar">
+      <div class="word">知识<span>宇宙</span></div>
+      <div class="spacer"></div>
+      <div class="avatar">A</div>
+    </header>
+
+    <div class="cf-wrap" id="cfMain">
+      <div class="cf-head">
+        <h1>这是我对你的理解</h1>
+        <p>路径会完全基于它来排。看看哪里不准,点"改"直接修改——<br>你改的每一处,都会让后面的内容更贴合你。</p>
+      </div>
+
+      <div class="cf-card">
+        <div class="ch"><span class="ci"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="1.5" fill="var(--amber-deep)" stroke="none"/></svg></span><span class="cl">学习目标</span><span class="edit" data-edit>改</span></div>
+        <div class="cbody">学会手动控制相机,能拍出有质感的旅行风景与人像,摆脱全程自动挡。</div>
+      </div>
+
+      <div class="cf-card">
+        <div class="ch"><span class="ci"><svg viewBox="0 0 24 24"><path d="M4 19V6a2 2 0 0 1 2-2h9l5 5v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/></svg></span><span class="cl">起点水平</span><span class="edit" data-edit>改</span></div>
+        <div class="cbody">有一台微单,长期使用自动挡,构图靠直觉,没有手动曝光/光圈快门的实操基础。</div>
+      </div>
+
+      <div class="cf-card">
+        <div class="ch"><span class="ci"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span><span class="cl">可投入时间</span><span class="edit" data-edit>改</span></div>
+        <div class="cbody">每个周末可实拍一次,平时晚间可看教程,合计每周约 5–6 小时。</div>
+      </div>
+
+      <div class="cf-card">
+        <div class="ch"><span class="ci"><svg viewBox="0 0 24 24"><path d="M12 3l2.5 5.5L20 9l-4 4 1 6-5-3-5 3 1-6-4-4 5.5-.5z"/></svg></span><span class="cl">学习偏好</span><span class="edit" data-edit>改</span></div>
+        <div class="cbody">偏好案例驱动、多实拍多看范例;不喜欢纯讲参数理论。</div>
+      </div>
+
+      <div class="cf-infer">
+        <div class="ih">◆ 我的推断,请纠正我</div>
+        <div class="isub">这几项是我根据你的回答推测的,拿不准,你说了算。</div>
+        <div class="infer-row"><span class="il">学习类型</span><div class="iv-val">技能练习型<div class="ireason">含"练"的成分为主,重实操而非只求懂</div></div><span class="ichange">改判</span></div>
+        <div class="infer-row"><span class="il">建议节奏</span><div class="iv-val">每周 1–2 单元 · 约 10 周<div class="ireason">按你每周 5–6 小时估算</div></div><span class="ichange">改</span></div>
+        <div class="infer-row"><span class="il">起点深度</span><div class="iv-val">入门<div class="ireason">有设备但无手动实操经验</div></div><span class="ichange">改</span></div>
+      </div>
+
+      <div class="cf-actions">
+        <button class="ghost" data-go="interview">← 补充几句</button>
+        <button class="primary" id="cfConfirm" style="flex:1"><svg viewBox="0 0 24 24"><path d="M5 12l5 5L20 7"/></svg>确认,生成学习路径</button>
+      </div>
+    </div>
+
+    <div class="genwrap" id="cfGen">
+      <div class="ring"></div>
+      <h3>正在为你规划学习路径…</h3>
+      <p>按"技能练习型"的能力阶梯,结合你的起点(自动挡→手动)和每周 5–6 小时,排一条专属路径。只排阶段与单元标题,正文在你点进单元时再现生成。</p>
+    </div>
+
+    <div class="gen-done" id="cfDone">
+      <div class="check"><svg viewBox="0 0 24 24"><path d="M5 12l5 5L20 7"/></svg></div>
+      <h3>路径已就绪</h3>
+      <p>「摄影入门」· 4 个阶段 · 12 单元 · 约 10 周</p>
+      <button class="primary"><svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg>进入空间,开始第一单元</button>
+    </div>
+  </section>
+
+  <!-- ===== MEMORY ===== -->
+  <section class="screen" id="memory">
+    <header class="appbar">
+      <div class="word">知识<span>宇宙</span></div>
+      <nav><a data-go="memory" class="cur">关于我</a></nav>
+      <div class="spacer"></div>
+      <div class="avatar">A</div>
+    </header>
+    <div class="mm-wrap">
+      <div class="mm-head">
+        <h1>关于我</h1>
+        <p>这些是 AI 逐渐了解到的关于你的信息。你划词问 AI 时,它会带着这些作答,让回答更贴合你。</p>
+        <div class="note">这里的记忆<b>跨所有空间共享</b>——它记住的是"你是谁、怎么学",不属于某一个具体空间。改动即时生效,手机端也会同步。</div>
+      </div>
+
+      <div class="mm-group">
+        <div class="mm-gh">背景</div>
+        <div class="mm-item"><div class="txt">常驻新加坡,中文为母语</div><div class="acts"><span class="act" data-editm>✎</span><span class="act del" data-delm>🗑</span></div></div>
+      </div>
+
+      <div class="mm-group">
+        <div class="mm-gh">职业</div>
+        <div class="mm-item"><div class="txt">产品经理,约 8 年经验;正在做 AI 产品方向的转型</div><div class="acts"><span class="act" data-editm>✎</span><span class="act del" data-delm>🗑</span></div></div>
+      </div>
+
+      <div class="mm-group">
+        <div class="mm-gh">学习偏好</div>
+        <div class="mm-item"><div class="txt">偏爱案例驱动的讲解,讨厌纯理论堆砌</div><div class="acts"><span class="act" data-editm>✎</span><span class="act del" data-delm>🗑</span></div></div>
+        <div class="mm-item"><div class="txt">喜欢结构清晰、可回看的内容</div><div class="acts"><span class="act" data-editm>✎</span><span class="act del" data-delm>🗑</span></div></div>
+        <div class="mm-add"><span class="plus">＋</span>添加一条</div>
+      </div>
+
+      <div class="mm-group">
+        <div class="mm-gh">备注</div>
+        <div class="mm-item"><div class="txt">同时在学阳明心学与钢琴</div><div class="acts"><span class="act" data-editm>✎</span><span class="act del" data-delm>🗑</span></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== READING PREFERENCES ===== -->
+  <section class="screen" id="prefs">
+    <header class="appbar">
+      <div class="word">知识<span>宇宙</span></div>
+      <nav><a data-go="prefs" class="cur">阅读偏好</a></nav>
+      <div class="spacer"></div>
+      <div class="avatar">A</div>
+    </header>
+    <div style="max-width:900px;margin:0 auto;padding:0 28px"><span class="crumb" data-go="memory">← 设置</span></div>
+    <div class="rp-wrap">
+      <div class="rp-panel">
+        <h2>阅读偏好</h2>
+        <div class="sub">只影响网页端阅读,随账号保存</div>
+
+        <div class="rp-field">
+          <div class="fl">正文字号</div>
+          <div class="seg" id="segSize">
+            <button data-size="15">小</button>
+            <button data-size="16.5" class="on">中</button>
+            <button data-size="18.5">大</button>
+          </div>
+        </div>
+
+        <div class="rp-field">
+          <div class="fl">栏宽</div>
+          <div class="seg" id="segWidth">
+            <button data-width="580">窄</button>
+            <button data-width="680" class="on">标准</button>
+            <button data-width="820">宽</button>
+          </div>
+        </div>
+
+        <div class="rp-field">
+          <div class="fl">行距</div>
+          <div class="seg" id="segLh">
+            <button data-lh="1.75">紧凑</button>
+            <button data-lh="1.95" class="on">标准</button>
+            <button data-lh="2.2">宽松</button>
+          </div>
+        </div>
+
+        <div class="kbd-list">
+          <div class="kh">键盘快捷键</div>
+          <div class="kbd-row"><span>选中文字后问 AI</span><b>⌘ K</b></div>
+          <div class="kbd-row"><span>上一 / 下一单元</span><b>J / K</b></div>
+          <div class="kbd-row"><span>收起 / 展开目录</span><b>[</b></div>
+          <div class="kbd-row"><span>关闭问 AI 抽屉</span><b>Esc</b></div>
+        </div>
+      </div>
+
+      <div class="rp-preview">
+        <div class="pv-label">实时预览</div>
+        <div class="pv-body" id="pvBody" style="max-width:680px">
+          <h3 style="font-size:22px">RICE 的四个维度</h3>
+          <p style="font-size:16.5px;line-height:1.95"><b>Reach(触达)</b>:这个需求在一个周期内会影响多少用户。它逼你回答一个常被跳过的问题:这件事到底关系到多少人。</p>
+          <p style="font-size:16.5px;line-height:1.95"><b>Confidence(信心)</b>:你对前面这些估计有多大把握。它是一个百分比,作用是给那些"听起来很美但证据很薄"的需求降权。</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<script>
+const screens=document.querySelectorAll('.screen');
+const navBtns=document.querySelectorAll('.proto-bar button[data-go]');
+function go(id){
+  screens.forEach(s=>s.classList.toggle('active', s.id===id));
+  navBtns.forEach(b=>b.classList.toggle('on', b.dataset.go===id));
+  window.scrollTo({top:0});
+  if(id==='interview') startInterview();
+  if(id==='confirm') resetConfirm();
+}
+document.body.addEventListener('click',e=>{const t=e.target.closest('[data-go]');if(t)go(t.dataset.go);});
+
+// new space
+document.querySelectorAll('.ns-ex').forEach(x=>x.addEventListener('click',()=>{document.getElementById('nsInput').value=x.dataset.ex;}));
+document.getElementById('nsStart').addEventListener('click',()=>{ pendingFirst=document.getElementById('nsInput').value.trim()||'我想学摄影,能拍好旅行时的风景和人像。有一台微单但一直用自动挡。'; go('interview'); });
+
+// interview (canned adaptive demo)
+const script=[
+  {ai:'好的,想拍好旅行的风景和人像。你希望学到什么程度——是能在自动挡基础上拍得更好看,还是想真正手动控制相机?',lead:'先把目标定清楚'},
+  {ai:'明白。你现在用什么设备,之前有没有试过手动挡或者了解过光圈、快门这些?',lead:'看看你的起点'},
+  {ai:'了解了。你每周大概能投入多少时间?是固定周末,还是平时也能抽空?',lead:'摸清你的节奏'},
+  {ai:'最后一个:你更喜欢怎样的学法——多看范例多实拍,还是先系统弄懂原理?',lead:'对上你的偏好'},
+  {done:true,closing:'好,我对你的情况已经有完整了解了。先把我的理解整理给你确认,你看看准不准。'}
+];
+const demoAnswers=['想真正手动控制相机,不只是套滤镜','有一台微单,一直自动挡,光圈快门只听过没实际用过','周末能实拍一次,平时晚上能看点教程','喜欢多看例子多拍,别一上来全是参数理论'];
+let pendingFirst='';let ivStep=0;let ivStarted=false;
+const ivScroll=document.getElementById('ivScroll');
+const ivInput=document.getElementById('ivInput');
+const ivInputBar=document.getElementById('ivInputBar');
+function addBubble(cls,text,lead){const b=document.createElement('div');b.className='bubble '+cls;b.innerHTML=(lead?'<span class="lead-in">'+lead+'</span>':'')+text;ivScroll.appendChild(b);b.scrollIntoView({behavior:'smooth',block:'end'});}
+function showTyping(){const t=document.createElement('div');t.className='typing';t.id='typing';t.innerHTML='<i></i><i></i><i></i>';ivScroll.appendChild(t);t.scrollIntoView({behavior:'smooth',block:'end'});}
+function hideTyping(){document.getElementById('typing')?.remove();}
+function aiTurn(){
+  showTyping();
+  setTimeout(()=>{
+    hideTyping();
+    const step=script[ivStep];
+    if(step.done){
+      addBubble('ai',step.closing);
+      ivInputBar.style.display='none';
+      const d=document.createElement('div');d.className='iv-done';
+      d.innerHTML='<button class="primary" id="ivToConfirm"><svg viewBox="0 0 24 24" style="width:16px;height:16px;stroke:var(--amber);fill:none;stroke-width:2.4"><path d="M5 12h14M13 6l6 6-6 6"/></svg>查看我对你的理解</button>';
+      ivScroll.appendChild(d);d.scrollIntoView({behavior:'smooth',block:'end'});
+      document.getElementById('ivToConfirm').addEventListener('click',()=>go('confirm'));
+      document.getElementById('ivProg').textContent='了解完成';
+    }else{
+      addBubble('ai',step.ai,step.lead);
+      document.getElementById('ivProg').textContent='第 '+(ivStep+1)+' 问 / 约 4 问';
+    }
+  },900);
+}
+function startInterview(){
+  if(ivStarted) return; ivStarted=true;
+  ivScroll.innerHTML=''; ivStep=0; ivInputBar.style.display='';
+  addBubble('me', pendingFirst||'我想学摄影,能拍好旅行时的风景和人像。有一台微单但一直用自动挡。');
+  aiTurn();
+}
+function ivUserSend(){
+  const v=ivInput.value.trim(); if(!v && ivStep>=script.length) return;
+  addBubble('me', v||demoAnswers[ivStep]||'…'); ivInput.value=''; ivInput.style.height='auto';
+  ivStep++;
+  if(ivStep<script.length) aiTurn();
+}
+document.getElementById('ivSend').addEventListener('click',ivUserSend);
+ivInput.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();ivUserSend();}});
+ivInput.addEventListener('input',()=>{ivInput.style.height='auto';ivInput.style.height=Math.min(ivInput.scrollHeight,120)+'px';if(!ivInput.value)ivInput.placeholder=demoAnswers[ivStep]?('例:'+demoAnswers[ivStep]):'回复…';});
+// allow restart when re-entering from newspace
+document.getElementById('nsStart').addEventListener('click',()=>{ivStarted=false;});
+document.querySelectorAll('[data-go="interview"]').forEach(b=>b.addEventListener('click',()=>{ if(!ivScroll.children.length){ivStarted=false;} }));
+
+// confirm editing
+document.querySelectorAll('#confirm [data-edit]').forEach(e=>{
+  e.addEventListener('click',()=>{
+    const body=e.closest('.cf-card').querySelector('.cbody');
+    const on=body.getAttribute('contenteditable')==='true';
+    body.setAttribute('contenteditable', on?'false':'true');
+    e.textContent=on?'改':'完成';
+    if(!on){body.focus();}
+  });
+});
+function resetConfirm(){document.getElementById('cfMain').style.display='block';document.getElementById('cfGen').classList.remove('show');document.getElementById('cfDone').classList.remove('show');}
+document.getElementById('cfConfirm').addEventListener('click',()=>{
+  document.getElementById('cfMain').style.display='none';
+  document.getElementById('cfGen').classList.add('show');
+  setTimeout(()=>{document.getElementById('cfGen').classList.remove('show');document.getElementById('cfDone').classList.add('show');},2400);
+});
+
+// memory edit / delete / add
+document.getElementById('memory').addEventListener('click',e=>{
+  const ed=e.target.closest('[data-editm]');
+  const del=e.target.closest('[data-delm]');
+  const add=e.target.closest('.mm-add');
+  if(ed){const txt=ed.closest('.mm-item').querySelector('.txt');const on=txt.getAttribute('contenteditable')==='true';txt.setAttribute('contenteditable',on?'false':'true');ed.textContent=on?'✎':'✓';if(!on)txt.focus();}
+  if(del){const it=del.closest('.mm-item');it.style.opacity='0';it.style.transform='translateX(8px)';setTimeout(()=>it.remove(),180);}
+  if(add){const g=add.closest('.mm-group');const it=document.createElement('div');it.className='mm-item';it.innerHTML='<div class="txt" contenteditable="true"></div><div class="acts"><span class="act" data-editm>✓</span><span class="act del" data-delm>🗑</span></div>';g.insertBefore(it,add);it.querySelector('.txt').focus();}
+});
+
+// reading prefs live preview
+const pv=document.getElementById('pvBody');
+function segBind(id,apply){document.getElementById(id).addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;document.querySelectorAll('#'+id+' button').forEach(x=>x.classList.remove('on'));b.classList.add('on');apply(b);});}
+segBind('segSize',b=>{pv.querySelectorAll('p').forEach(p=>p.style.fontSize=b.dataset.size+'px');pv.querySelector('h3').style.fontSize=(parseFloat(b.dataset.size)+5.5)+'px';});
+segBind('segWidth',b=>{pv.style.maxWidth=b.dataset.width+'px';});
+segBind('segLh',b=>{pv.querySelectorAll('p').forEach(p=>p.style.lineHeight=b.dataset.lh);});
+
+go('newspace');
+</script>
+</body>
+</html>

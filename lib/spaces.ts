@@ -4,11 +4,109 @@
 import { getSupabase } from '@/lib/supabase/client';
 import type {
   ComputedPhase,
+  PathPhase,
   PathUnit,
   PhaseWithUnits,
   SpaceCard,
   SpacePath,
 } from '@/lib/types';
+
+// ── 新建空间落库（Phase 2）。移植自 App src/lib/spaces.ts:createSpace/persistPath。
+// 空间额度由 DB 约束：insert spaces 超限抛 SPACE_LIMIT_REACHED，捕获后友好提示。
+export type CreateSpaceInput = {
+  spaceName: string;
+  learningType: string;
+  staticProfile: Record<string, unknown>;
+};
+
+/** 建 spaces 一行 + space_profiles 一行(static)。返回新 spaceId。 */
+export async function createSpace(
+  input: CreateSpaceInput,
+): Promise<{ spaceId: string | null; error: string | null }> {
+  const supabase = getSupabase();
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+  if (!session?.user) return { spaceId: null, error: '未登录' };
+
+  const ins = await supabase
+    .from('spaces')
+    .insert({
+      user_id: session.user.id,
+      name: input.spaceName,
+      learning_type: input.learningType,
+    })
+    .select('id')
+    .single();
+  if (ins.error) {
+    const msg = /SPACE_LIMIT_REACHED/.test(ins.error.message)
+      ? '已达当前可创建的学习空间上限。邀请好友可再解锁。'
+      : ins.error.message;
+    return { spaceId: null, error: msg };
+  }
+
+  const spaceId = ins.data.id as string;
+
+  const prof = await supabase.from('space_profiles').insert({
+    space_id: spaceId,
+    schema_version: 1,
+    learning_type: input.learningType,
+    static: input.staticProfile,
+    dynamic: {},
+  });
+  if (prof.error) return { spaceId: null, error: prof.error.message };
+
+  return { spaceId, error: null };
+}
+
+/** 落库 gen_path 返回的路径：phases(首阶段 active 其余 locked) + units(not_generated)。 */
+export async function persistPath(
+  spaceId: string,
+  phases: PathPhase[],
+): Promise<{
+  ok: boolean;
+  error: string | null;
+  phaseCount: number;
+  unitCount: number;
+}> {
+  const supabase = getSupabase();
+  let unitCount = 0;
+
+  for (const p of phases) {
+    const phaseIns = await supabase
+      .from('phases')
+      .insert({
+        space_id: spaceId,
+        idx: p.idx,
+        title: p.title,
+        status: p.idx === 1 ? 'active' : 'locked',
+      })
+      .select('id')
+      .single();
+    if (phaseIns.error) {
+      return { ok: false, error: phaseIns.error.message, phaseCount: 0, unitCount };
+    }
+    const phaseId = phaseIns.data.id as string;
+
+    const unitRows = (p.units ?? []).map((u) => ({
+      space_id: spaceId,
+      phase_id: phaseId,
+      idx: u.idx,
+      title: u.title,
+      status: 'not_generated',
+      content: null,
+    }));
+    if (unitRows.length > 0) {
+      const uIns = await supabase.from('units').insert(unitRows);
+      if (uIns.error) {
+        return { ok: false, error: uIns.error.message, phaseCount: 0, unitCount };
+      }
+      unitCount += unitRows.length;
+    }
+  }
+
+  return { ok: true, error: null, phaseCount: phases.length, unitCount };
+}
 
 // ── 读某空间 + 其 phases/units（路径页）────────────────────────────────
 export async function fetchSpacePath(spaceId: string): Promise<SpacePath> {

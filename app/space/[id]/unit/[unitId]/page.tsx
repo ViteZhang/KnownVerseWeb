@@ -5,6 +5,12 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AskDrawer, type SaveStatus } from '@/components/ask-drawer';
 import { ReadingBlocks, headingsOf } from '@/components/reading-blocks';
 import { askAI, genUnit } from '@/lib/ai';
+import {
+  DEFAULT_PREFS,
+  fetchReadingPrefs,
+  prefsToStyle,
+  type ReadingPrefs,
+} from '@/lib/reading-prefs';
 import { fetchReadingProgress, saveReadingProgress } from '@/lib/reading-progress';
 import { saveQuestion } from '@/lib/questions';
 import { buildSectionContext } from '@/lib/section-context';
@@ -35,6 +41,12 @@ export default function UnitPage({
 
   const [railCollapsed, setRailCollapsed] = useState(false);
   const [tocCur, setTocCur] = useState<string | null>(null);
+
+  // 阅读偏好（随账号，跨设备）。加载前用默认档，避免闪动。
+  const [prefs, setPrefs] = useState<ReadingPrefs>(DEFAULT_PREFS);
+  useEffect(() => {
+    fetchReadingPrefs().then(setPrefs);
+  }, []);
 
   // 划词选区
   const [selText, setSelText] = useState('');
@@ -67,6 +79,13 @@ export default function UnitPage({
     [phases, unitId],
   );
   const nextUnit = useMemo(() => findNextUnit(phases), [phases]);
+
+  // 路径中的完整单元顺序（键盘 J/K 定位切换，与左侧轨道点击行为一致）。
+  const orderedUnits = useMemo(() => phases.flatMap((p) => p.units), [phases]);
+  const curIndex = useMemo(
+    () => orderedUnits.findIndex((u) => u.id === unitId),
+    [orderedUnits, unitId],
+  );
 
   // ── 生成单元内容（未生成时）─────────────────────────────────────────
   const runGeneration = useCallback(async (u: Unit) => {
@@ -197,6 +216,37 @@ export default function UnitPage({
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
   }, [openDrawer]);
+
+  // J/K 上下单元 · [ 收起/展开目录（桌面快捷键，§4.2）。
+  // 只在无修饰键、非输入态、抽屉关闭时生效；⌘K 由上面的处理器负责。
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.metaKey || e.ctrlKey || e.altKey || drawerOpen) return;
+      const el = document.activeElement as HTMLElement | null;
+      if (
+        el &&
+        (el.tagName === 'INPUT' ||
+          el.tagName === 'TEXTAREA' ||
+          el.isContentEditable)
+      )
+        return;
+      const k = e.key.toLowerCase();
+      if (k === '[') {
+        e.preventDefault();
+        setRailCollapsed((v) => !v);
+      } else if (k === 'j' || k === 'k') {
+        if (curIndex < 0) return;
+        const target =
+          k === 'j' ? orderedUnits[curIndex + 1] : orderedUnits[curIndex - 1];
+        if (target) {
+          e.preventDefault();
+          router.push(`/space/${spaceId}/unit/${target.id}`);
+        }
+      }
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [drawerOpen, curIndex, orderedUnits, router, spaceId]);
 
   const onAsk = useCallback(
     async (question: string) => {
@@ -372,7 +422,7 @@ export default function UnitPage({
             </div>
           ) : (
             unit && (
-              <div className="read-inner">
+              <div className="read-inner" style={prefsToStyle(prefs)}>
                 <div className="rd-top">
                   <button
                     className="railtoggle"

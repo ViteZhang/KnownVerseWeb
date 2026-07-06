@@ -58,6 +58,13 @@ export type SpaceCard = {
   finished: boolean;
 };
 
+/** gen_path 返回 / persistPath 落库用的路径结构（与 App spaces.ts:PathPhase 同源）。 */
+export type PathPhase = {
+  idx: number;
+  title: string;
+  units: { idx: number; title: string }[];
+};
+
 export type QuestionRecord = {
   id: string;
   selected_text: string;

@@ -8,6 +8,20 @@ import { signOut } from '@/lib/auth';
 
 type NavKey = 'home' | 'path' | 'qlog';
 
+// 头像下拉菜单项统一样式（Link + button 共用）。
+const menuItemStyle: React.CSSProperties = {
+  display: 'block',
+  width: '100%',
+  textAlign: 'left',
+  padding: '9px 12px',
+  fontSize: 13.5,
+  color: 'var(--ink-soft)',
+  background: 'transparent',
+  border: 'none',
+  borderRadius: 8,
+  cursor: 'pointer',
+};
+
 /** 顶部 appbar（品牌 + 导航 + 头像）。导航的「学习路径/提问记录」需要 spaceId 上下文，
  *  没有时只显示「我的空间」。点头像可登出。 */
 export function Appbar({
@@ -94,21 +108,28 @@ export function Appbar({
               minWidth: 120,
             }}
           >
-            <button
-              onClick={onSignOut}
-              style={{
-                display: 'block',
-                width: '100%',
-                textAlign: 'left',
-                padding: '9px 12px',
-                fontSize: 13.5,
-                color: 'var(--ink-soft)',
-                background: 'transparent',
-                border: 'none',
-                borderRadius: 8,
-                cursor: 'pointer',
-              }}
+            <Link
+              href="/about"
+              onClick={() => setMenuOpen(false)}
+              style={menuItemStyle}
             >
+              关于我 · 记忆
+            </Link>
+            <Link
+              href="/prefs"
+              onClick={() => setMenuOpen(false)}
+              style={menuItemStyle}
+            >
+              阅读偏好
+            </Link>
+            <div
+              style={{
+                height: 1,
+                background: 'var(--line)',
+                margin: '5px 6px',
+              }}
+            />
+            <button onClick={onSignOut} style={menuItemStyle}>
               退出登录
             </button>
           </div>
