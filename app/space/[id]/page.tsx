@@ -6,7 +6,12 @@ import { useEffect, useMemo, useState } from 'react';
 import { Appbar } from '@/components/appbar';
 import { typeTag } from '@/lib/learning-type';
 import { fetchReadingProgress } from '@/lib/reading-progress';
-import { computePhaseStatuses, fetchSpacePath, findNextUnit } from '@/lib/spaces';
+import {
+  computePhaseStatuses,
+  deleteSpace,
+  fetchSpacePath,
+  findNextUnit,
+} from '@/lib/spaces';
 import type { ComputedPhase, SpacePath } from '@/lib/types';
 
 function statusPill(status: string): { cls: string; label: string } {
@@ -21,6 +26,24 @@ export default function PathPage({ params }: { params: { id: string } }) {
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<SpacePath | null>(null);
   const [resumeUnitId, setResumeUnitId] = useState<string | null>(null);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+
+  const doDelete = async () => {
+    if (deleting) return;
+    setDeleting(true);
+    setDeleteError(null);
+    const r = await deleteSpace(spaceId);
+    if (!r.ok) {
+      setDeleting(false);
+      setDeleteError(r.error ?? '删除失败，请稍后重试。');
+      return;
+    }
+    // 成功：回首页，列表会重新拉取、额度恢复。
+    router.replace('/');
+  };
 
   useEffect(() => {
     Promise.all([fetchSpacePath(spaceId), fetchReadingProgress(spaceId)]).then(
@@ -92,6 +115,44 @@ export default function PathPage({ params }: { params: { id: string } }) {
       <div className="path-grid">
         <div>
           <div className="path-head">
+            <div className="space-menu">
+              <button
+                className="menu-btn"
+                title="空间设置"
+                aria-label="空间设置"
+                onClick={() => setMenuOpen((v) => !v)}
+              >
+                <svg viewBox="0 0 24 24">
+                  <circle cx="5" cy="12" r="1.6" />
+                  <circle cx="12" cy="12" r="1.6" />
+                  <circle cx="19" cy="12" r="1.6" />
+                </svg>
+              </button>
+              {menuOpen && (
+                <>
+                  <div
+                    className="menu-catch"
+                    onClick={() => setMenuOpen(false)}
+                  />
+                  <div className="menu-pop" role="menu">
+                    <button
+                      className="menu-item danger"
+                      role="menuitem"
+                      onClick={() => {
+                        setMenuOpen(false);
+                        setDeleteError(null);
+                        setConfirmDelete(true);
+                      }}
+                    >
+                      <svg viewBox="0 0 24 24">
+                        <path d="M4 7h16M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2M6 7l1 13a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-13" />
+                      </svg>
+                      删除空间
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
             <Link className="crumb" href="/">
               ← 我的空间
             </Link>
@@ -193,6 +254,36 @@ export default function PathPage({ params }: { params: { id: string } }) {
           </div>
         </aside>
       </div>
+
+      {confirmDelete && (
+        <div className="confirm-wrap">
+          <div
+            className="confirm-scrim"
+            onClick={() => !deleting && setConfirmDelete(false)}
+          />
+          <div className="confirm-card" role="dialog" aria-modal="true">
+            <h3>删除这个学习空间?</h3>
+            <p>
+              此操作不可恢复——该空间的路径、单元、提问记录都会一并清除。
+            </p>
+            {deleteError && <div className="confirm-err">{deleteError}</div>}
+            <button
+              className="confirm-del"
+              disabled={deleting}
+              onClick={doDelete}
+            >
+              {deleting ? '删除中…' : '删除空间'}
+            </button>
+            <button
+              className="confirm-cancel"
+              disabled={deleting}
+              onClick={() => setConfirmDelete(false)}
+            >
+              取消
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

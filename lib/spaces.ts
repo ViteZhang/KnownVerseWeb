@@ -108,6 +108,17 @@ export async function persistPath(
   return { ok: true, error: null, phaseCount: phases.length, unitCount };
 }
 
+// ── 删除空间。RLS 只允许 owner 删自己的；DB 级联删 profiles/phases/units/questions/events。
+// 删除后空间额度自动恢复（额度按 spaces 行数算）。移植自 App src/lib/spaces.ts。
+export async function deleteSpace(
+  spaceId: string,
+): Promise<{ ok: boolean; error: string | null }> {
+  const supabase = getSupabase();
+  const del = await supabase.from('spaces').delete().eq('id', spaceId);
+  if (del.error) return { ok: false, error: del.error.message };
+  return { ok: true, error: null };
+}
+
 // ── 读某空间 + 其 phases/units（路径页）────────────────────────────────
 export async function fetchSpacePath(spaceId: string): Promise<SpacePath> {
   const supabase = getSupabase();
