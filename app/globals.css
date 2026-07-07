@@ -78,8 +78,8 @@ a{color:inherit;text-decoration:none}
 .home-hd .greet{font-family:var(--font-read);font-size:24px;font-weight:600;letter-spacing:.3px}
 .home-hd .greet small{display:block;font-family:var(--font-ui);font-size:13px;color:var(--ink-soft);font-weight:400;margin-top:7px}
 .section-label{font-size:11.5px;font-weight:600;letter-spacing:1.4px;color:var(--ink-faint);text-transform:uppercase;padding:26px 2px 14px}
-.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
-@media(max-width:980px){.grid{grid-template-columns:repeat(2,1fr)}}
+.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+@media(max-width:980px){.grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:660px){.grid{grid-template-columns:1fr}}
 .space-card{background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:18px 18px 16px;box-shadow:var(--shadow-sm);cursor:pointer;transition:.2s;display:flex;flex-direction:column;text-align:left}
 .space-card:hover{transform:translateY(-3px);box-shadow:var(--shadow)}
@@ -92,7 +92,7 @@ a{color:inherit;text-decoration:none}
 .prog .n{font-size:11.5px;color:var(--ink-faint);font-feature-settings:"tnum"}
 .resume{display:flex;align-items:center;gap:8px;margin-top:14px;padding-top:14px;border-top:1px dashed var(--line)}
 .resume .dot{width:6px;height:6px;border-radius:50%;background:var(--amber);flex:none;box-shadow:0 0 0 4px var(--amber-wash)}
-.resume .txt{font-size:12.5px;color:var(--ink-soft);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.resume .txt{flex:1;min-width:0;font-size:12.5px;color:var(--ink-soft);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .resume .txt b{color:var(--ink);font-weight:600}
 .resume .go{margin-left:auto;font-size:12px;font-weight:600;color:var(--amber-deep);flex:none}
 .newspace{border:1.5px dashed rgba(221,149,39,.4);border-radius:20px;padding:18px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:var(--ink-soft);font-size:14px;font-weight:500;cursor:default;transition:.18s;min-height:172px;background:transparent}
