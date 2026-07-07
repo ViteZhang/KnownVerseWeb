@@ -1,6 +1,6 @@
 // 调用 Edge Function ai-task 的客户端封装。移植自 App src/lib/ai.ts。
 // invoke 自动带当前会话 JWT；档案注入在 Edge Function 内部完成，网页端不碰。
-// V1 非流式（不移植 genUnitStream）。
+// gen_unit 走流式（genUnitStream，NDJSON 逐块）；其余任务用 invoke 一次性返回。
 import { getSupabase } from '@/lib/supabase/client';
 import type { ContentBlock, PathPhase } from '@/lib/types';
 
@@ -64,6 +64,73 @@ export async function genUnit(
     return { content: null, error: GEN_FALLBACK };
   } catch {
     return { content: null, error: GEN_FALLBACK };
+  }
+}
+
+// 每收到一个块就回调 onBlock；返回收齐的块 + error（用于固化/兜底判断）。
+// NDJSON 流格式（见 ai-task §6.6）：每行 {"block":{…}} / 末行 {"done":true} / 出错 {"error":"…"}。
+export type GenStreamResult = { blocks: ContentBlock[]; error: string | null };
+
+/** 生成单元内容（task='gen_unit', stream=true）。边收边回调 onBlock 逐块渲染。 */
+export async function genUnitStream(
+  spaceId: string,
+  unitId: string,
+  onBlock: (block: ContentBlock) => void,
+): Promise<GenStreamResult> {
+  const blocks: ContentBlock[] = [];
+  try {
+    if (typeof TextDecoder === 'undefined') {
+      // 无法解码 UTF-8 流 → 让调用方回退一次性生成。
+      return { blocks, error: GEN_FALLBACK };
+    }
+    const {
+      data: { session },
+    } = await getSupabase().auth.getSession();
+    const baseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? '';
+    const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? '';
+    const resp = await fetch(`${baseUrl}/functions/v1/ai-task`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        apikey: anonKey,
+        ...(session ? { Authorization: `Bearer ${session.access_token}` } : {}),
+      },
+      body: JSON.stringify({ task: 'gen_unit', stream: true, spaceId, unitId }),
+    });
+    if (!resp.ok || !resp.body) return { blocks, error: GEN_FALLBACK };
+
+    const reader = resp.body.getReader();
+    const decoder = new TextDecoder();
+    let buf = '';
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buf += decoder.decode(value, { stream: true });
+      let nl: number;
+      while ((nl = buf.indexOf('\n')) >= 0) {
+        const line = buf.slice(0, nl).trim();
+        buf = buf.slice(nl + 1);
+        if (!line) continue;
+        let obj: { block?: ContentBlock; error?: string; done?: boolean };
+        try {
+          obj = JSON.parse(line);
+        } catch {
+          continue;
+        }
+        if (obj.block) {
+          blocks.push(obj.block);
+          onBlock(obj.block);
+        } else if (obj.error) {
+          return { blocks, error: obj.error };
+        } else if (obj.done) {
+          return { blocks, error: null };
+        }
+      }
+    }
+    // 流自然结束但没收到 done：有块算成功，无块算失败。
+    return { blocks, error: blocks.length > 0 ? null : GEN_FALLBACK };
+  } catch {
+    return { blocks, error: GEN_FALLBACK };
   }
 }
 

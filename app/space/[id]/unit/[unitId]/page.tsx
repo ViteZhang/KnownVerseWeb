@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { AskDrawer, type SaveStatus } from '@/components/ask-drawer';
 import { ReadingBlocks, headingsOf } from '@/components/reading-blocks';
-import { askAI, genUnit } from '@/lib/ai';
+import { askAI, genUnitStream } from '@/lib/ai';
 import {
   DEFAULT_PREFS,
   fetchReadingPrefs,
@@ -87,23 +87,34 @@ export default function UnitPage({
     [orderedUnits, unitId],
   );
 
-  // ── 生成单元内容（未生成时）─────────────────────────────────────────
+  // ── 生成单元内容（未生成时）：流式逐块渲染，收齐后一次性固化 ──────────
   const runGeneration = useCallback(async (u: Unit) => {
     setGenerating(true);
     setGenError(null);
     setPersistWarn(false);
-    const r = await genUnit(u.space_id, u.id);
+    // 起手先清空该单元内容，避免旧块残留；随后每收到一块就追加渲染。
+    setUnit((prev) =>
+      prev && prev.id === u.id ? { ...prev, content: [], status: 'learning' } : prev,
+    );
+    const r = await genUnitStream(u.space_id, u.id, (block) => {
+      setUnit((prev) =>
+        prev && prev.id === u.id
+          ? { ...prev, content: [...(prev.content ?? []), block] }
+          : prev,
+      );
+    });
     setGenerating(false);
-    if (r.error !== null || !r.content) {
+    if (r.error !== null || r.blocks.length === 0) {
       setGenError(r.error ?? '内容生成失败，请稍后重试。');
       return;
     }
+    // 以收齐的完整块数组为准回填 + 固化（防止流式过程中的状态竞态）。
     setUnit((prev) =>
       prev && prev.id === u.id
-        ? { ...prev, content: r.content, status: 'learning' }
+        ? { ...prev, content: r.blocks, status: 'learning' }
         : prev,
     );
-    const p = await persistUnitContent(u.id, r.content);
+    const p = await persistUnitContent(u.id, r.blocks);
     setPersistWarn(!p.ok);
   }, []);
 
@@ -401,12 +412,12 @@ export default function UnitPage({
               <div className="st-title">读不到这条单元</div>
               <div className="st-text">{error}</div>
             </div>
-          ) : generating ? (
+          ) : generating && blocks.length === 0 ? (
             <div className="genwrap">
               <div className="ring" />
               <h3>正在为你生成这一单元…</h3>
               <p>
-                AI 正结合你的学习档案按内容模板撰写本单元。生成后会永久保存，下次直接打开。
+                AI 正结合你的学习档案按内容模板撰写本单元。内容会边写边显示，生成后永久保存，下次直接打开。
               </p>
             </div>
           ) : genError ? (
@@ -451,13 +462,24 @@ export default function UnitPage({
 
                 <ReadingBlocks blocks={blocks as ContentBlock[]} />
 
+                {generating && blocks.length > 0 && (
+                  <div className="stream-more">
+                    <span className="dots">
+                      <i />
+                      <i />
+                      <i />
+                    </span>
+                    正在续写…
+                  </div>
+                )}
+
                 <div className="rd-actions">
                   {unit.status === 'done' ? (
                     <span className="done-tag">✓ 已学完本单元</span>
                   ) : (
                     <button
                       className="primary"
-                      disabled={completing || blocks.length === 0}
+                      disabled={completing || generating || blocks.length === 0}
                       onClick={onMarkDone}
                     >
                       <svg viewBox="0 0 24 24">
