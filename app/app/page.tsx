@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 
 import { Appbar } from '@/components/appbar';
 import { typeTag } from '@/lib/learning-type';
+import { applyPendingReferral } from '@/lib/referral';
 import { fetchSpacesOverview } from '@/lib/spaces';
 import type { SpaceCard } from '@/lib/types';
 
@@ -20,18 +21,33 @@ export default function HomePage() {
   const [loading, setLoading] = useState(true);
   const [spaces, setSpaces] = useState<SpaceCard[]>([]);
   const [error, setError] = useState<string | null>(null);
+  // 邀请码应用成功的轻提示（§6.2），3s 自动消失。
+  const [toast, setToast] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchSpacesOverview().then((r) => {
+    let alive = true;
+    // 登录后应用暂存的邀请码一次（§6.2）。幂等；成功才轻提示，无效/已邀过静默。
+    (async () => {
+      const applied = await applyPendingReferral();
+      const r = await fetchSpacesOverview();
+      if (!alive) return;
       setSpaces(r.spaces);
       setError(r.error);
       setLoading(false);
-    });
+      if (applied?.applied) {
+        setToast('已为你和邀请人各解锁 1 个学习空间');
+        setTimeout(() => alive && setToast(null), 3000);
+      }
+    })();
+    return () => {
+      alive = false;
+    };
   }, []);
 
   return (
     <div className="app">
       <Appbar cur="home" />
+      {toast && <div className="toast">{toast}</div>}
       <div className="home-wrap">
         <div className="home-hd">
           <div className="greet">

@@ -10,7 +10,6 @@ export function LandingFooter() {
           知识<span>宇宙</span>
           <div className="co">
             把用 AI 学习，变成有结构、有进度、能沉淀的个人学习空间。
-            <br />© 2026 北京筑梦探索科技有限公司
           </div>
         </div>
         <div className="foot-links">

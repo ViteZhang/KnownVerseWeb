@@ -9,7 +9,7 @@ export function LandingHero() {
         <div>
           <span className="eyebrow">
             <span className="dot" />
-            面向华语终身学习者 · AI 原生
+            面向终身学习者 · AI 原生
           </span>
           <h1 className="head">
             把“用 AI 学习”，
@@ -99,28 +99,28 @@ export function LandingHero() {
               </text>
             </g>
 
-            {/* space node A · 阳明心学 */}
+            {/* space node A · 学科知识 */}
             <g className="starnode float-a">
               <circle cx="210" cy="60" r="30" fill="var(--surface)" stroke="var(--plum)" strokeWidth="1.5" />
               <circle cx="210" cy="60" r="30" fill="var(--plum-wash)" />
               <text className="node-label" x="210" y="64" textAnchor="middle" style={{ fill: 'var(--plum)' }}>
-                心学
+                学科
               </text>
             </g>
-            {/* space node B · AI PM */}
+            {/* space node B · 职业技能 */}
             <g className="starnode float-b">
               <circle cx="352" cy="262" r="30" fill="var(--surface)" stroke="var(--amber-deep)" strokeWidth="1.5" />
               <circle cx="352" cy="262" r="30" fill="var(--amber-wash)" />
               <text className="node-label" x="352" y="266" textAnchor="middle" style={{ fill: 'var(--amber-deep)' }}>
-                AI PM
+                技能
               </text>
             </g>
-            {/* space node C · 钢琴 */}
+            {/* space node C · 兴趣爱好 */}
             <g className="starnode float-c">
               <circle cx="72" cy="262" r="30" fill="var(--surface)" stroke="var(--sage)" strokeWidth="1.5" />
               <circle cx="72" cy="262" r="30" fill="var(--sage-wash)" />
               <text className="node-label" x="72" y="266" textAnchor="middle" style={{ fill: 'var(--sage)' }}>
-                钢琴
+                兴趣
               </text>
             </g>
 

@@ -122,6 +122,13 @@ export function Appbar({
             >
               阅读偏好
             </Link>
+            <Link
+              href="/app/invite"
+              onClick={() => setMenuOpen(false)}
+              style={menuItemStyle}
+            >
+              邀请好友
+            </Link>
             <div
               style={{
                 height: 1,

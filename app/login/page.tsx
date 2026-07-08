@@ -7,6 +7,7 @@ import {
   signUpWithEmail,
   verifySignupOtp,
 } from '@/lib/auth';
+import { setPendingReferral } from '@/lib/referral';
 
 type Mode = 'login' | 'register' | 'otp';
 
@@ -15,6 +16,8 @@ export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [otp, setOtp] = useState('');
+  const [code, setCode] = useState('');
+  const [codeOpen, setCodeOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [ok, setOk] = useState<string | null>(null);
@@ -38,6 +41,8 @@ export default function LoginPage() {
     setErr(null);
     setOk(null);
     setBusy(true);
+    // 有邀请码先暂存（成功登录/验证后由首页应用一次，§6.2）。
+    if (code.trim()) setPendingReferral(code);
     const r = await signUpWithEmail(email, password);
     setBusy(false);
     if (!r.ok) return setErr(r.error);
@@ -141,6 +146,22 @@ export default function LoginPage() {
               onChange={(e) => setPassword(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && submit()}
             />
+            {/* 可选「有邀请码?」入口（§6.2）：仅注册时显示 */}
+            {mode === 'register' &&
+              (codeOpen ? (
+                <input
+                  className="field"
+                  placeholder="粘贴朋友给你的邀请码"
+                  autoCapitalize="characters"
+                  value={code}
+                  onChange={(e) => setCode(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && submit()}
+                />
+              ) : (
+                <div className="switch" style={{ marginTop: 2, marginBottom: 12 }}>
+                  <a onClick={() => setCodeOpen(true)}>有邀请码？点此填写</a>
+                </div>
+              ))}
             {err && <div className="err">{err}</div>}
             {ok && <div className="ok">{ok}</div>}
             <button className="primary" onClick={submit} disabled={busy}>
