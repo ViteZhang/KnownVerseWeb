@@ -22,7 +22,7 @@ export default function LoginPage() {
   // 登录成功后整页跳首页：用 location.assign 而非 router.replace，确保浏览器把刚写入的
   // 会话 Cookie 一并发给服务端 middleware，避免「Cookie 还没落地就被打回登录页」的竞态。
   const goHome = () => {
-    window.location.assign('/');
+    window.location.assign('/app');
   };
 
   const onLogin = async () => {

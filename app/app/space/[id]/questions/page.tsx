@@ -42,7 +42,7 @@ export default function QuestionsPage({ params }: { params: { id: string } }) {
       <Appbar cur="qlog" spaceId={spaceId} />
       <div className="qlog-wrap">
         <div className="qlog-head">
-          <Link className="crumb" href={`/space/${spaceId}`}>
+          <Link className="crumb" href={`/app/space/${spaceId}`}>
             ← {spaceName || '学习路径'}
           </Link>
           <h1>提问记录</h1>
@@ -88,7 +88,7 @@ export default function QuestionsPage({ params }: { params: { id: string } }) {
                     className="uref"
                     onClick={(e) => {
                       e.stopPropagation();
-                      router.push(`/space/${spaceId}/unit/${r.unit_id}`);
+                      router.push(`/app/space/${spaceId}/unit/${r.unit_id}`);
                     }}
                   >
                     ↩ {r.unit_title ?? '单元'}

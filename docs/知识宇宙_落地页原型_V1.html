@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!-- ===== SEO 基础标签（Next.js 落地时接入 metadata / next-seo，并补 sitemap + schema.org） ===== -->
+<title>知识宇宙 · 把用 AI 学习，变成属于你的个人学习空间</title>
+<meta name="description" content="聊天框适合问答，不适合学习。知识宇宙把每一个学习目标变成独立的学习空间——AI 为你生成学习路径、可随手划线提问、问答自动沉淀。面向华语终身学习者。">
+<meta property="og:title" content="知识宇宙 · 把用 AI 学习，变成属于你的个人学习空间">
+<meta property="og:description" content="每一个想学的东西，都是一个有结构、有进度、能沉淀的学习空间。AI 带着对你的了解陪你学。">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="zh_CN">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Serif+SC:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#FAF8F3; --surface:#FFFFFF; --surface-2:#F6F2EA;
+  --ink:#20242E; --ink-soft:#565B66; --ink-faint:#9A9EA8;
+  --line:#ECE6DB; --line-soft:#F3EEE5;
+  --amber:#DD9527; --amber-deep:#B0701A; --amber-wash:rgba(221,149,39,.16); --amber-line:rgba(221,149,39,.5);
+  --sage:#5E7A6B; --sage-wash:rgba(94,122,107,.14);
+  --plum:#5C5A86; --plum-wash:#ECEAF2;
+  --shadow-sm:0 1px 2px rgba(30,32,40,.05);
+  --shadow:0 1px 2px rgba(30,32,40,.04),0 10px 28px rgba(30,32,40,.07);
+  --shadow-lg:0 24px 60px rgba(30,32,40,.14);
+  --font-ui:"Inter","PingFang SC","Hiragino Sans GB","Microsoft YaHei",system-ui,sans-serif;
+  --font-read:"Noto Serif SC","Songti SC","STSong",Georgia,serif;
+  --maxw:1080px;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html{scroll-behavior:smooth}
+body{
+  font-family:var(--font-ui); color:var(--ink); line-height:1.6;
+  background:
+    radial-gradient(1200px 620px at 50% -8%, #F1EBDF 0%, rgba(241,235,223,0) 62%),
+    linear-gradient(180deg,#FAF8F3 0%, #F4EEE3 100%);
+  min-height:100vh; -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:var(--maxw);margin:0 auto;padding:0 24px}
+a{color:inherit;text-decoration:none}
+::selection{background:var(--amber-wash)}
+
+/* ---------- NAV ---------- */
+.nav{position:sticky;top:0;z-index:50;backdrop-filter:blur(10px);
+  background:rgba(250,248,243,.72);border-bottom:1px solid var(--line-soft)}
+.nav .wrap{display:flex;align-items:center;justify-content:space-between;height:64px}
+.brand{font-weight:700;font-size:19px;letter-spacing:.5px}
+.brand span{color:var(--amber-deep)}
+.navlinks{display:flex;align-items:center;gap:26px}
+.navlinks a{font-size:14px;color:var(--ink-soft);transition:.15s}
+.navlinks a:hover{color:var(--ink)}
+.btn{font-family:var(--font-ui);font-weight:600;cursor:pointer;border:none;transition:.18s;display:inline-flex;align-items:center;gap:8px;white-space:nowrap}
+.btn-primary{background:var(--ink);color:#fff;border-radius:13px;padding:11px 20px;font-size:14px}
+.btn-primary:hover{transform:translateY(-1px);box-shadow:var(--shadow)}
+.btn-primary svg{width:15px;height:15px;stroke:var(--amber);fill:none;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
+.btn-ghost{background:transparent;color:var(--ink-soft);border:1px solid var(--line);border-radius:13px;padding:11px 20px;font-size:14px}
+.btn-ghost:hover{color:var(--ink);border-color:var(--amber-line);background:var(--surface)}
+.btn-lg{padding:15px 28px;font-size:15px;border-radius:14px}
+@media(max-width:680px){.navlinks a:not(.navcta){display:none}}
+
+/* ---------- HERO ---------- */
+.hero{padding:64px 0 40px}
+.hero .wrap{display:grid;grid-template-columns:1.05fr .95fr;gap:48px;align-items:center}
+.eyebrow{display:inline-flex;align-items:center;gap:8px;font-size:12.5px;font-weight:600;letter-spacing:.6px;
+  color:var(--amber-deep);background:var(--amber-wash);padding:6px 13px;border-radius:999px;margin-bottom:22px}
+.eyebrow .dot{width:6px;height:6px;border-radius:50%;background:var(--amber);box-shadow:0 0 0 4px var(--amber-wash)}
+h1.head{font-family:var(--font-read);font-weight:700;font-size:46px;line-height:1.22;letter-spacing:.5px}
+h1.head b{color:var(--amber-deep);font-weight:700}
+.hero .sub{font-size:16.5px;color:var(--ink-soft);line-height:1.75;margin-top:22px;max-width:520px}
+.hero .cta-row{display:flex;gap:13px;margin-top:32px;flex-wrap:wrap}
+.hero .note{font-size:12.5px;color:var(--ink-faint);margin-top:16px}
+.hero .note b{color:var(--ink-soft);font-weight:600}
+@media(max-width:860px){
+  .hero .wrap{grid-template-columns:1fr;gap:36px}
+  h1.head{font-size:36px}
+  .hero-visual{order:-1;max-width:360px;margin:0 auto}
+}
+
+/* ---------- CONSTELLATION SIGNATURE ---------- */
+.hero-visual{position:relative;aspect-ratio:1/1;width:100%}
+.constellation{width:100%;height:100%;overflow:visible}
+.orbit{fill:none;stroke:var(--amber-line);stroke-width:1;stroke-dasharray:3 6;opacity:.55}
+.starnode{transform-box:fill-box;transform-origin:center}
+.float-a{animation:floatA 7s ease-in-out infinite}
+.float-b{animation:floatB 8.5s ease-in-out infinite}
+.float-c{animation:floatC 6.5s ease-in-out infinite}
+@keyframes floatA{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
+@keyframes floatB{0%,100%{transform:translateY(0)}50%{transform:translateY(8px)}}
+@keyframes floatC{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+.node-label{font-family:var(--font-ui);font-size:11.5px;font-weight:600;fill:var(--ink-soft)}
+.node-core{font-family:var(--font-read);font-size:15px;font-weight:700;fill:#fff}
+.spark{animation:twinkle 4s ease-in-out infinite}
+@keyframes twinkle{0%,100%{opacity:.25}50%{opacity:.9}}
+
+/* ---------- SECTIONS ---------- */
+section{padding:56px 0}
+.sec-eyebrow{font-size:12.5px;font-weight:600;letter-spacing:1.4px;text-transform:uppercase;color:var(--amber-deep);margin-bottom:14px}
+h2.sec{font-family:var(--font-read);font-size:31px;font-weight:700;line-height:1.35;letter-spacing:.4px}
+.sec-lead{font-size:16px;color:var(--ink-soft);margin-top:14px;max-width:620px;line-height:1.75}
+
+/* problem list */
+.problems{background:var(--surface-2);border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.plist{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:34px}
+.pcard{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:20px 22px;display:flex;gap:14px;align-items:flex-start;box-shadow:var(--shadow-sm)}
+.pcard .x{flex:none;width:26px;height:26px;border-radius:8px;background:var(--surface-2);display:grid;place-items:center;margin-top:1px}
+.pcard .x svg{width:14px;height:14px;stroke:var(--ink-faint);stroke-width:2.4;fill:none;stroke-linecap:round}
+.pcard p{font-size:14.5px;color:var(--ink-soft);line-height:1.65}
+.pcard p b{color:var(--ink);font-weight:600}
+.pconclusion{margin-top:30px;font-family:var(--font-read);font-size:19px;line-height:1.7;color:var(--ink);text-align:center;max-width:720px;margin-left:auto;margin-right:auto}
+.pconclusion b{color:var(--amber-deep)}
+@media(max-width:680px){.plist{grid-template-columns:1fr}}
+
+/* how it works */
+.steps{margin-top:40px;display:flex;flex-direction:column;gap:0}
+.step{display:grid;grid-template-columns:64px 1fr;gap:22px;padding:26px 0;border-bottom:1px solid var(--line-soft)}
+.step:last-child{border-bottom:none}
+.step .num{font-family:var(--font-read);font-size:15px;font-weight:700;color:var(--amber-deep);width:48px;height:48px;border-radius:50%;
+  border:1.5px solid var(--amber-line);display:grid;place-items:center;background:var(--amber-wash)}
+.step h3{font-size:18px;font-weight:600;letter-spacing:.2px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.step .keytag{font-size:10.5px;font-weight:600;color:var(--amber-deep);background:var(--amber-wash);padding:3px 10px;border-radius:999px;letter-spacing:.4px}
+.step p{font-size:14.5px;color:var(--ink-soft);line-height:1.7;margin-top:8px;max-width:560px}
+.step p em{font-style:normal;color:var(--ink);font-weight:600}
+
+/* differentiator band */
+.diff{background:var(--ink);color:#fff}
+.diff .wrap{text-align:center;padding:8px 0}
+.diff .sec-eyebrow{color:var(--amber)}
+.diff h2{font-family:var(--font-read);font-size:30px;font-weight:700;line-height:1.4;letter-spacing:.4px;color:#fff;max-width:760px;margin:0 auto}
+.diff h2 b{color:var(--amber)}
+.diff p{font-size:15.5px;color:#B9BCC4;line-height:1.75;margin-top:20px;max-width:600px;margin-left:auto;margin-right:auto}
+
+/* use cases */
+.cases{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:38px}
+.case{background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:22px;box-shadow:var(--shadow-sm);transition:.2s}
+.case:hover{transform:translateY(-3px);box-shadow:var(--shadow)}
+.case .tag{font-size:10.5px;font-weight:600;padding:4px 11px;border-radius:999px;letter-spacing:.3px}
+.tag.career{background:var(--amber-wash);color:var(--amber-deep)}
+.tag.think{background:var(--plum-wash);color:var(--plum)}
+.tag.skill{background:var(--sage-wash);color:var(--sage)}
+.case h3{font-size:18px;font-weight:600;margin:16px 0 8px}
+.case p{font-size:13.5px;color:var(--ink-soft);line-height:1.65}
+.case .miniprog{margin-top:16px;display:flex;align-items:center;gap:9px}
+.case .bar{flex:1;height:5px;border-radius:99px;background:var(--line-soft);overflow:hidden}
+.case .bar i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,var(--amber),var(--amber-deep))}
+.case .miniprog .n{font-size:11px;color:var(--ink-faint)}
+.cases-foot{margin-top:26px;text-align:center;font-size:14px;color:var(--ink-soft)}
+.cases-foot b{color:var(--ink);font-weight:600}
+@media(max-width:780px){.cases{grid-template-columns:1fr}}
+
+/* final cta */
+.final{text-align:center}
+.final .card{background:var(--surface);border:1px solid var(--line);border-radius:26px;padding:52px 32px;box-shadow:var(--shadow);
+  background-image:radial-gradient(600px 200px at 50% 0%, var(--amber-wash) 0%, rgba(0,0,0,0) 70%)}
+.final h2{font-family:var(--font-read);font-size:32px;font-weight:700;letter-spacing:.4px}
+.final p{font-size:16px;color:var(--ink-soft);margin-top:16px}
+.final .cta-row{display:flex;gap:13px;justify-content:center;margin-top:30px;flex-wrap:wrap}
+.final .subnote{font-size:12.5px;color:var(--ink-faint);margin-top:18px}
+
+/* footer */
+footer{border-top:1px solid var(--line);padding:40px 0 48px;margin-top:20px}
+footer .wrap{display:flex;justify-content:space-between;align-items:flex-start;gap:24px;flex-wrap:wrap}
+.foot-brand{font-weight:700;font-size:16px}
+.foot-brand span{color:var(--amber-deep)}
+.foot-brand .co{font-weight:400;font-size:12px;color:var(--ink-faint);margin-top:8px;line-height:1.6}
+.foot-links{display:flex;gap:30px;flex-wrap:wrap}
+.foot-col a{display:block;font-size:13px;color:var(--ink-soft);margin-bottom:10px;transition:.15s}
+.foot-col a:hover{color:var(--amber-deep)}
+.foot-col .h{font-size:11px;font-weight:600;letter-spacing:.8px;text-transform:uppercase;color:var(--ink-faint);margin-bottom:14px}
+
+/* reveal */
+.reveal{opacity:0;transform:translateY(18px);transition:opacity .6s ease, transform .6s ease}
+.reveal.in{opacity:1;transform:none}
+@media(prefers-reduced-motion:reduce){
+  .reveal{opacity:1;transform:none;transition:none}
+  .float-a,.float-b,.float-c,.spark{animation:none}
+  html{scroll-behavior:auto}
+}
+</style>
+</head>
+<body>
+
+<!-- ===== NAV ===== -->
+<nav class="nav">
+  <div class="wrap">
+    <div class="brand">知识<span>宇宙</span></div>
+    <div class="navlinks">
+      <a href="#how">它怎么运作</a>
+      <a href="#cases">学什么</a>
+      <a href="#">博客</a>
+      <a class="navcta btn btn-primary" href="#start">免费开始</a>
+    </div>
+  </div>
+</nav>
+
+<!-- ===== HERO ===== -->
+<header class="hero">
+  <div class="wrap">
+    <div>
+      <span class="eyebrow"><span class="dot"></span>面向华语终身学习者 · AI 原生</span>
+      <h1 class="head">把"用 AI 学习"，<br>变成一个属于你的<br><b>知识宇宙</b></h1>
+      <p class="sub">聊天框适合问答，不适合学习。在这里，每一个想学的东西都是一个独立的学习空间——有 AI 为你生成的学习路径、可随手划线提问的内容、自动沉淀的问答记录。越学，它越懂你。</p>
+      <div class="cta-row">
+        <a class="btn btn-primary btn-lg" href="#start">
+          <svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+          免费开始使用
+        </a>
+        <a class="btn btn-ghost btn-lg" href="#how">看它怎么运作</a>
+      </div>
+      <p class="note"><b>内测期完全免费</b> · 网页版即刻可用，App 即将登陆 App Store 与 Google Play</p>
+    </div>
+
+    <!-- SIGNATURE: 个人学习星群 -->
+    <div class="hero-visual">
+      <svg class="constellation" viewBox="0 0 420 420" role="img" aria-label="以你为中心、多个学习空间环绕的知识星群示意">
+        <!-- orbits -->
+        <ellipse class="orbit" cx="210" cy="210" rx="150" ry="150"/>
+        <ellipse class="orbit" cx="210" cy="210" rx="150" ry="60" transform="rotate(-24 210 210)"/>
+        <!-- faint sparks -->
+        <circle class="spark" cx="70" cy="120" r="2" fill="var(--amber)"/>
+        <circle class="spark" cx="350" cy="150" r="1.6" fill="var(--amber)" style="animation-delay:1.2s"/>
+        <circle class="spark" cx="120" cy="350" r="2" fill="var(--amber)" style="animation-delay:2.1s"/>
+        <circle class="spark" cx="330" cy="320" r="1.6" fill="var(--amber)" style="animation-delay:.6s"/>
+
+        <!-- core: 你 -->
+        <g>
+          <circle cx="210" cy="210" r="46" fill="var(--ink)"/>
+          <circle cx="210" cy="210" r="46" fill="none" stroke="var(--amber)" stroke-width="1.5" opacity=".5"/>
+          <text class="node-core" x="210" y="216" text-anchor="middle">你</text>
+        </g>
+
+        <!-- space node A · 阳明心学 -->
+        <g class="starnode float-a">
+          <circle cx="210" cy="60" r="30" fill="var(--surface)" stroke="var(--plum)" stroke-width="1.5"/>
+          <circle cx="210" cy="60" r="30" fill="var(--plum-wash)"/>
+          <text class="node-label" x="210" y="64" text-anchor="middle" style="fill:var(--plum)">心学</text>
+        </g>
+        <!-- space node B · AI PM -->
+        <g class="starnode float-b">
+          <circle cx="352" cy="262" r="30" fill="var(--surface)" stroke="var(--amber-deep)" stroke-width="1.5"/>
+          <circle cx="352" cy="262" r="30" fill="var(--amber-wash)"/>
+          <text class="node-label" x="352" y="266" text-anchor="middle" style="fill:var(--amber-deep)">AI PM</text>
+        </g>
+        <!-- space node C · 钢琴 -->
+        <g class="starnode float-c">
+          <circle cx="72" cy="262" r="30" fill="var(--surface)" stroke="var(--sage)" stroke-width="1.5"/>
+          <circle cx="72" cy="262" r="30" fill="var(--sage-wash)"/>
+          <text class="node-label" x="72" y="266" text-anchor="middle" style="fill:var(--sage)">钢琴</text>
+        </g>
+
+        <!-- connective threads core→nodes -->
+        <line x1="210" y1="164" x2="210" y2="90" stroke="var(--amber-line)" stroke-width="1" stroke-dasharray="2 5"/>
+        <line x1="248" y1="238" x2="326" y2="248" stroke="var(--amber-line)" stroke-width="1" stroke-dasharray="2 5"/>
+        <line x1="172" y1="238" x2="98" y2="248" stroke="var(--amber-line)" stroke-width="1" stroke-dasharray="2 5"/>
+      </svg>
+    </div>
+  </div>
+</header>
+
+<!-- ===== PROBLEM ===== -->
+<section class="problems">
+  <div class="wrap">
+    <div class="reveal">
+      <div class="sec-eyebrow">熟悉这些时刻吗</div>
+      <h2 class="sec">你也这样用 AI 学过东西</h2>
+    </div>
+    <div class="plist">
+      <div class="pcard reveal"><span class="x"><svg viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg></span><p>内容像瀑布流一样往下滚，<b>上周学的那段，再也找不到</b></p></div>
+      <div class="pcard reveal"><span class="x"><svg viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg></span><p>AI 给的是一坨文档，<b>只能复制出去、换个软件读</b></p></div>
+      <div class="pcard reveal"><span class="x"><svg viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg></span><p>学到哪了全靠记忆，<b>每次都要花时间找回进度</b></p></div>
+      <div class="pcard reveal"><span class="x"><svg viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg></span><p>追问几句，好内容就<b>淹进聊天记录，没法回看整理</b></p></div>
+      <div class="pcard reveal"><span class="x"><svg viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg></span><p>换个会话、上下文满了，<b>又得把自己重新介绍一遍</b></p></div>
+      <div class="pcard reveal"><span class="x"><svg viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg></span><p>想系统学，<b>却只有一问一答，没有路径和全貌</b></p></div>
+    </div>
+    <p class="pconclusion reveal">问题不在 AI，在于聊天框用<b>时间线</b>组织信息——而学习需要的，是<b>知识结构 + 进度状态</b>。</p>
+  </div>
+</section>
+
+<!-- ===== HOW IT WORKS ===== -->
+<section id="how">
+  <div class="wrap">
+    <div class="reveal">
+      <div class="sec-eyebrow">它怎么运作</div>
+      <h2 class="sec">从一个目标，到一个懂你的学习空间</h2>
+      <p class="sec-lead">四步，把"想学点什么"变成可以每天回来的地方。</p>
+    </div>
+    <div class="steps">
+      <div class="step reveal">
+        <div class="num">壹</div>
+        <div>
+          <h3>说出你想学什么</h3>
+          <p>一句话，或一段话都行。AI 会像一次入学访谈那样，问清你的<em>背景、目标和能投入的节奏</em>——问完还给你一张"我对你的理解"确认页，你可以逐条改。</p>
+        </div>
+      </div>
+      <div class="step reveal">
+        <div class="num">贰</div>
+        <div>
+          <h3>得到为你生成的学习路径</h3>
+          <p>阶段化、可编辑的路径，而不是通用课程。<em>它是按你的起点生成的</em>——同样学"投资理财"，给新手和给财务背景的人，是两条不同的路。</p>
+        </div>
+      </div>
+      <div class="step reveal">
+        <div class="num">叁</div>
+        <div>
+          <h3>在阅读中随手问 <span class="keytag">核心差异</span></h3>
+          <p>读到不懂的地方，<em>长按选中那几个字</em>，就能问 AI。它结合你的学习档案作答——知道你在学什么、什么水平——而不是给所有人同一个泛泛的答案。</p>
+        </div>
+      </div>
+      <div class="step reveal">
+        <div class="num">肆</div>
+        <div>
+          <h3>每一次提问都会沉淀</h3>
+          <p>问答自动存进这个空间的<em>提问记录</em>，随时回看，不再淹进聊天流；进度自动保存，下次打开直接从上次的地方接着学。</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== DIFFERENTIATOR ===== -->
+<section class="diff">
+  <div class="wrap">
+    <div class="reveal">
+      <div class="sec-eyebrow">为什么不是又一个聊天框</div>
+      <h2>同一个问题，AI 带着<b>"它对你的了解"</b>回答，<br>而不是给一万个人同一段话。</h2>
+      <p>你的背景、目标、水平、已经掌握和还薄弱的地方，都会随着你学习不断积累，成为每一次生成和答疑的上下文。用得越久，它越懂你——这是聊天框天生给不了的。</p>
+    </div>
+  </div>
+</section>
+
+<!-- ===== USE CASES ===== -->
+<section id="cases">
+  <div class="wrap">
+    <div class="reveal">
+      <div class="sec-eyebrow">学什么都行</div>
+      <h2 class="sec">无论你想学什么，都给它一个空间</h2>
+      <p class="sec-lead">技能、应试、兴趣、自我成长——多个学习空间并行，档案、路径、进度、提问记录互不干扰。</p>
+    </div>
+    <div class="cases">
+      <div class="case reveal">
+        <span class="tag career">职业转型</span>
+        <h3>转型 AI 产品经理</h3>
+        <p>从现有产品经验出发，AI 生成一条补齐 AI 认知与实战的路径，边读边把不懂的概念问透。</p>
+        <div class="miniprog"><div class="bar"><i style="width:62%"></i></div><span class="n">62%</span></div>
+      </div>
+      <div class="case reveal">
+        <span class="tag think">自我成长</span>
+        <h3>阳明心学</h3>
+        <p>思辨型内容，不是背知识点，而是顺着"知行合一"一层层追问，把经典读进自己的处境里。</p>
+        <div class="miniprog"><div class="bar"><i style="width:40%"></i></div><span class="n">40%</span></div>
+      </div>
+      <div class="case reveal">
+        <span class="tag skill">技能</span>
+        <h3>成人自学钢琴</h3>
+        <p>从零起步的技能路径，拆成可练的小单元，卡在某个乐理或指法上，随手就能问。</p>
+        <div class="miniprog"><div class="bar"><i style="width:28%"></i></div><span class="n">28%</span></div>
+      </div>
+    </div>
+    <p class="cases-foot reveal">这三个空间，正是<b>创始人自己</b>在知识宇宙里学的——产品从一个真实的学习工作流长出来。</p>
+  </div>
+</section>
+
+<!-- ===== FINAL CTA ===== -->
+<section id="start" class="final">
+  <div class="wrap">
+    <div class="card reveal">
+      <h2>现在，开一个属于你的空间</h2>
+      <p>告诉它你想学什么，几分钟后你就有了一条为你生成的学习路径。</p>
+      <div class="cta-row">
+        <a class="btn btn-primary btn-lg" href="#">
+          <svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+          免费开始使用
+        </a>
+        <a class="btn btn-ghost btn-lg" href="#">下载 App（即将上线）</a>
+      </div>
+      <p class="subnote">内测期完全免费 · 每人可开多个学习空间 · 无需信用卡</p>
+    </div>
+  </div>
+</section>
+
+<!-- ===== FOOTER ===== -->
+<footer>
+  <div class="wrap">
+    <div class="foot-brand">
+      知识<span>宇宙</span>
+      <div class="co">把用 AI 学习，变成有结构、有进度、能沉淀的个人学习空间。<br>© 2026 北京筑梦探索科技有限公司</div>
+    </div>
+    <div class="foot-links">
+      <div class="foot-col">
+        <div class="h">产品</div>
+        <a href="#how">它怎么运作</a>
+        <a href="#cases">学什么</a>
+        <a href="#start">免费开始</a>
+      </div>
+      <div class="foot-col">
+        <div class="h">资源</div>
+        <a href="#">博客</a>
+        <a href="#">邀请码</a>
+        <a href="#">帮助与反馈</a>
+      </div>
+      <div class="foot-col">
+        <div class="h">法务</div>
+        <a href="#">隐私政策</a>
+        <a href="#">用户服务协议</a>
+        <a href="#">联系我们</a>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script>
+// scroll reveal
+const io = new IntersectionObserver((entries)=>{
+  entries.forEach(e=>{ if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target);} });
+},{threshold:.14, rootMargin:'0px 0px -40px 0px'});
+document.querySelectorAll('.reveal').forEach((el,i)=>{
+  el.style.transitionDelay = (i%3)*70 + 'ms';
+  io.observe(el);
+});
+</script>
+</body>
+</html>

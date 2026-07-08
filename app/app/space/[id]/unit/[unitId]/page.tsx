@@ -251,7 +251,7 @@ export default function UnitPage({
           k === 'j' ? orderedUnits[curIndex + 1] : orderedUnits[curIndex - 1];
         if (target) {
           e.preventDefault();
-          router.push(`/space/${spaceId}/unit/${target.id}`);
+          router.push(`/app/space/${spaceId}/unit/${target.id}`);
         }
       }
     };
@@ -346,9 +346,9 @@ export default function UnitPage({
     const path = await fetchSpacePath(spaceId);
     const next = findNextUnit(path.phases);
     if (next && next.id !== unit.id) {
-      router.push(`/space/${spaceId}/unit/${next.id}`);
+      router.push(`/app/space/${spaceId}/unit/${next.id}`);
     } else {
-      router.push(`/space/${spaceId}`);
+      router.push(`/app/space/${spaceId}`);
     }
   };
 
@@ -369,7 +369,7 @@ export default function UnitPage({
           <div className="rr-sp">
             <span
               style={{ cursor: 'pointer', color: 'var(--amber-deep)' }}
-              onClick={() => router.push(`/space/${spaceId}`)}
+              onClick={() => router.push(`/app/space/${spaceId}`)}
             >
               ← 学习路径
             </span>
@@ -389,7 +389,7 @@ export default function UnitPage({
                   <div
                     key={u.id}
                     className={cls}
-                    onClick={() => router.push(`/space/${spaceId}/unit/${u.id}`)}
+                    onClick={() => router.push(`/app/space/${spaceId}/unit/${u.id}`)}
                   >
                     <span className="d" />
                     {u.title}
@@ -447,7 +447,7 @@ export default function UnitPage({
                   <div className="rd-kicker">{kicker}</div>
                   <span
                     className="rd-back"
-                    onClick={() => router.push(`/space/${spaceId}`)}
+                    onClick={() => router.push(`/app/space/${spaceId}`)}
                   >
                     返回路径
                   </span>
@@ -492,7 +492,7 @@ export default function UnitPage({
                     <button
                       className="ghost"
                       onClick={() =>
-                        router.push(`/space/${spaceId}/unit/${nextUnit.id}`)
+                        router.push(`/app/space/${spaceId}/unit/${nextUnit.id}`)
                       }
                     >
                       下一单元 →

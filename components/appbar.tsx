@@ -67,7 +67,7 @@ export function Appbar({
         知识<span>宇宙</span>
       </div>
       <nav>
-        <Link className={cur === 'home' ? 'cur' : ''} href="/">
+        <Link className={cur === 'home' ? 'cur' : ''} href="/app">
           我的空间
         </Link>
         {spaceId && (
@@ -109,14 +109,14 @@ export function Appbar({
             }}
           >
             <Link
-              href="/about"
+              href="/app/about"
               onClick={() => setMenuOpen(false)}
               style={menuItemStyle}
             >
               关于我 · 记忆
             </Link>
             <Link
-              href="/prefs"
+              href="/app/prefs"
               onClick={() => setMenuOpen(false)}
               style={menuItemStyle}
             >

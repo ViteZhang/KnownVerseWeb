@@ -40,7 +40,7 @@ export default function PrefsPage() {
     <div className="app">
       <Appbar cur="home" />
       <div style={{ maxWidth: 900, margin: '0 auto', padding: '0 28px' }}>
-        <Link className="crumb" href="/about">
+        <Link className="crumb" href="/app/about">
           ← 关于我
         </Link>
       </div>

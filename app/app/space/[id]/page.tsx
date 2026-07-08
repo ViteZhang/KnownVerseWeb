@@ -42,7 +42,7 @@ export default function PathPage({ params }: { params: { id: string } }) {
       return;
     }
     // 成功：回首页，列表会重新拉取、额度恢复。
-    router.replace('/');
+    router.replace('/app');
   };
 
   useEffect(() => {
@@ -91,7 +91,7 @@ export default function PathPage({ params }: { params: { id: string } }) {
         <div className="center-state">
           <div className="st-title">找不到这个空间</div>
           <div className="st-text">{data?.error ?? '它可能不属于当前账号。'}</div>
-          <Link className="ghost" href="/" style={{ marginTop: 8 }}>
+          <Link className="ghost" href="/app" style={{ marginTop: 8 }}>
             ← 回到我的空间
           </Link>
         </div>
@@ -107,7 +107,7 @@ export default function PathPage({ params }: { params: { id: string } }) {
     '开始学习';
 
   const openUnit = (unitId: string) =>
-    router.push(`/space/${spaceId}/unit/${unitId}`);
+    router.push(`/app/space/${spaceId}/unit/${unitId}`);
 
   return (
     <div className="app">
@@ -153,7 +153,7 @@ export default function PathPage({ params }: { params: { id: string } }) {
                 </>
               )}
             </div>
-            <Link className="crumb" href="/">
+            <Link className="crumb" href="/app">
               ← 我的空间
             </Link>
             <h1>{data.space.name}</h1>
@@ -219,7 +219,7 @@ export default function PathPage({ params }: { params: { id: string } }) {
 
         <aside className="side">
           {resumeUnitId && (
-            <Link className="resume-hero" href={`/space/${spaceId}/unit/${resumeUnitId}`}>
+            <Link className="resume-hero" href={`/app/space/${spaceId}/unit/${resumeUnitId}`}>
               <small>继续学习</small>
               <div className="ru">{resumeTitle}</div>
               <div className="rgo">回到上次进度 →</div>
@@ -229,7 +229,7 @@ export default function PathPage({ params }: { params: { id: string } }) {
             <div className="h">本空间</div>
             <Link
               className="minirow"
-              href={`/space/${spaceId}/questions`}
+              href={`/app/space/${spaceId}/questions`}
               style={{ textDecoration: 'none' }}
             >
               <span className="mi">
@@ -241,7 +241,7 @@ export default function PathPage({ params }: { params: { id: string } }) {
               <span className="ml">提问记录</span>
               <span className="mc">›</span>
             </Link>
-            <Link className="minirow" href="/about" style={{ textDecoration: 'none' }}>
+            <Link className="minirow" href="/app/about" style={{ textDecoration: 'none' }}>
               <span className="mi">
                 <svg viewBox="0 0 24 24">
                   <circle cx="12" cy="8" r="4" />
