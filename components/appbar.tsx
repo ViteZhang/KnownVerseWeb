@@ -20,6 +20,7 @@ const menuItemStyle: React.CSSProperties = {
   border: 'none',
   borderRadius: 8,
   cursor: 'pointer',
+  whiteSpace: 'nowrap',
 };
 
 /** 顶部 appbar（品牌 + 导航 + 头像）。导航的「学习路径/提问记录」需要 spaceId 上下文，
@@ -147,12 +148,9 @@ export function Appbar({
                 ...menuItemStyle,
                 color: 'var(--amber-deep)',
                 fontWeight: 600,
-                display: 'flex',
-                alignItems: 'center',
-                gap: 7,
+                whiteSpace: 'nowrap',
               }}
             >
-              <span aria-hidden="true">🎁</span>
               我的邀请码
             </Link>
             <div
