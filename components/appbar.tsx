@@ -87,11 +87,29 @@ export function Appbar({
       <div className="spacer" />
       <div ref={wrapRef} style={{ position: 'relative' }}>
         <button
-          className="avatar"
+          className="avatar-btn"
           onClick={() => setMenuOpen((v) => !v)}
-          title="账户"
+          title="账户 · 邀请好友 · 设置"
+          aria-haspopup="menu"
+          aria-expanded={menuOpen}
         >
-          {initial}
+          <span className="avatar">{initial}</span>
+          <svg
+            className={`caret${menuOpen ? ' open' : ''}`}
+            viewBox="0 0 24 24"
+            width="14"
+            height="14"
+            aria-hidden="true"
+          >
+            <path
+              d="M6 9l6 6 6-6"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
         </button>
         {menuOpen && (
           <div
@@ -125,9 +143,17 @@ export function Appbar({
             <Link
               href="/app/invite"
               onClick={() => setMenuOpen(false)}
-              style={menuItemStyle}
+              style={{
+                ...menuItemStyle,
+                color: 'var(--amber-deep)',
+                fontWeight: 600,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 7,
+              }}
             >
-              邀请好友
+              <span aria-hidden="true">🎁</span>
+              我的邀请码
             </Link>
             <div
               style={{

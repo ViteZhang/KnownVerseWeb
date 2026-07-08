@@ -39,7 +39,11 @@ a{color:inherit;text-decoration:none}
 .appbar nav a:hover{background:rgba(255,255,255,.6);color:var(--ink)}
 .appbar nav a.cur{color:var(--ink);font-weight:600;background:#fff;box-shadow:var(--shadow-sm)}
 .appbar .spacer{flex:1}
-.appbar .avatar{width:38px;height:38px;border-radius:50%;background:var(--ink);color:#fff;display:grid;place-items:center;font-weight:600;font-size:15px;cursor:pointer;flex:none;border:none}
+.appbar .avatar-btn{display:flex;align-items:center;gap:5px;background:none;border:none;padding:0;cursor:pointer;color:var(--ink-faint)}
+.appbar .avatar-btn:hover{color:var(--ink-soft)}
+.appbar .avatar{width:38px;height:38px;border-radius:50%;background:var(--ink);color:#fff;display:grid;place-items:center;font-weight:600;font-size:15px;flex:none}
+.appbar .avatar-btn .caret{transition:transform .18s}
+.appbar .avatar-btn .caret.open{transform:rotate(180deg)}
 
 .primary{background:var(--ink);color:#fff;border:none;border-radius:14px;padding:13px 18px;font-size:14px;font-weight:600;cursor:pointer;
   display:inline-flex;align-items:center;justify-content:center;gap:8px;transition:.18s}
