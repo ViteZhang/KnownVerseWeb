@@ -658,3 +658,99 @@ a{color:inherit;text-decoration:none}
   .inv-redeem{flex-direction:column}
   .inv-code{font-size:19px}
 }
+
+/* ═══════════════════════════════════════════════════════════════════
+   Phase 3 商业化：法务页 prose + 定价页（class 取自《原型 V1》，scope 到 .pricing）
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ---- 通用内容页容器（法务 / 定价共用顶栏留白）---- */
+.page-main{min-height:60vh}
+
+/* ---- 法务 prose ---- */
+.legal{max-width:760px;margin:0 auto;padding:44px 24px 72px}
+.legal .eyebrow{font-size:11.5px;font-weight:700;letter-spacing:1.6px;color:var(--amber-deep);text-transform:uppercase}
+.legal h1{font-family:var(--font-read);font-size:30px;font-weight:700;margin:12px 0 6px;letter-spacing:.3px}
+.legal .updated{font-size:12.5px;color:var(--ink-faint);margin-bottom:26px}
+.legal h2{font-size:17px;font-weight:700;margin:30px 0 10px;color:var(--ink)}
+.legal h3{font-size:14.5px;font-weight:600;margin:20px 0 8px;color:var(--ink)}
+.legal p,.legal li{font-size:14.5px;line-height:1.85;color:#33373F}
+.legal p{margin:12px 0}
+.legal ul,.legal ol{margin:12px 0 12px 22px;display:flex;flex-direction:column;gap:8px}
+.legal strong{color:var(--ink);font-weight:600}
+.legal a{color:var(--amber-deep);text-decoration:none}
+.legal a:hover{text-decoration:underline}
+.legal .note{background:var(--surface-2);border:1px solid var(--line);border-radius:14px;padding:16px 18px;margin:20px 0;font-size:13.5px;color:var(--ink-soft);line-height:1.7}
+.legal .placeholder{color:var(--danger);background:var(--danger-wash,rgba(192,88,75,.1));padding:1px 6px;border-radius:5px;font-size:13px}
+
+/* ---- 定价页 ---- */
+.pricing{--maxw:820px}
+.pricing .price-hero{text-align:center;padding:52px 24px 26px;background:radial-gradient(700px 300px at 50% 0%,var(--amber-wash),transparent 70%)}
+.pricing .price-hero .eb{font-size:11.5px;font-weight:700;letter-spacing:2px;color:var(--amber-deep);text-transform:uppercase}
+.pricing .price-hero h1{font-family:var(--font-read);font-size:32px;font-weight:700;margin:14px 0 12px;line-height:1.3;letter-spacing:.3px}
+.pricing .price-hero h1 em{font-style:normal;color:var(--amber-deep)}
+.pricing .price-hero p{font-size:14px;color:var(--ink-soft);max-width:460px;margin:0 auto;line-height:1.7}
+.pricing .legend{display:inline-flex;gap:16px;margin-top:18px;font-size:12.5px;color:var(--ink-soft);background:var(--surface);border:1px solid var(--line);padding:9px 16px;border-radius:999px;box-shadow:var(--shadow-sm)}
+.pricing .legend span{display:inline-flex;align-items:center;gap:6px}
+.pricing .legend b{color:var(--amber-deep);font-weight:700}
+.pricing .legend .sep{color:var(--line)}
+
+.pricing .toggle{display:flex;justify-content:center;margin:26px 0 4px}
+.pricing .seg2{display:inline-flex;background:var(--surface-2);border:1px solid var(--line);border-radius:999px;padding:4px;position:relative}
+.pricing .seg2 button{border:none;background:transparent;font-size:13px;font-weight:600;color:var(--ink-soft);padding:8px 20px;border-radius:999px;cursor:pointer;transition:.15s;position:relative;z-index:2}
+.pricing .seg2 button.on{color:#fff}
+.pricing .seg2 .knob{position:absolute;top:4px;left:4px;height:calc(100% - 8px);border-radius:999px;background:var(--ink);transition:.24s cubic-bezier(.4,0,.2,1);z-index:1}
+.pricing .save-tag{font-size:10.5px;font-weight:700;color:var(--sage);margin-left:7px}
+
+.pricing .plans{display:grid;grid-template-columns:1fr 1fr;gap:16px;max-width:660px;margin:22px auto 0;padding:0 24px}
+.pricing .plan{border:1px solid var(--line);border-radius:20px;padding:24px 22px;background:var(--surface);position:relative;box-shadow:var(--shadow-sm)}
+.pricing .plan.free{background:var(--surface-2)}
+.pricing .plan.pro{border:1.5px solid var(--amber-deep);box-shadow:var(--shadow)}
+.pricing .plan .rib{position:absolute;top:-11px;left:22px;font-size:10.5px;font-weight:700;letter-spacing:.4px;background:var(--amber-deep);color:#fff;padding:4px 11px;border-radius:999px}
+.pricing .plan .pname{font-size:14px;font-weight:700}
+.pricing .plan .amt{margin:12px 0 2px;display:flex;align-items:baseline;gap:5px}
+.pricing .plan .amt .big{font-size:34px;font-weight:800;letter-spacing:-.5px;font-variant-numeric:tabular-nums}
+.pricing .plan .amt .per{font-size:13px;color:var(--ink-faint)}
+.pricing .plan .permo{font-size:11.5px;color:var(--ink-faint);min-height:16px}
+.pricing .plan ul{list-style:none;margin:18px 0 20px;display:flex;flex-direction:column;gap:11px;padding:0}
+.pricing .plan li{font-size:13px;color:var(--ink-soft);display:flex;align-items:flex-start;gap:9px;line-height:1.45}
+.pricing .plan li svg{width:15px;height:15px;flex:none;margin-top:1px;stroke-width:2.6;fill:none;stroke-linecap:round;stroke-linejoin:round;stroke:var(--sage)}
+.pricing .plan li .k{color:var(--ink);font-weight:600}
+.pricing .plan .cta{width:100%;border-radius:13px;padding:13px;font-size:13.5px;font-weight:700;cursor:pointer;transition:.16s;border:1px solid var(--line);background:var(--surface);color:var(--ink)}
+.pricing .plan.pro .cta{background:var(--ink);color:#fff;border-color:var(--ink)}
+.pricing .plan.pro .cta:hover{transform:translateY(-1px)}
+.pricing .plan.free .cta{background:transparent}
+
+.pricing .addons{max-width:660px;margin:30px auto 0;padding:0 24px}
+.pricing .addons .h{font-size:12px;font-weight:600;letter-spacing:1.2px;color:var(--ink-faint);text-transform:uppercase;text-align:center;margin-bottom:14px}
+.pricing .addgrid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.pricing .addcard{border:1px solid var(--line);border-radius:16px;padding:18px;background:var(--surface);display:flex;align-items:center;gap:14px}
+.pricing .addcard .ai{width:42px;height:42px;border-radius:12px;background:var(--amber-wash);border:1px solid var(--amber-line);display:grid;place-items:center;flex:none}
+.pricing .addcard .ai svg{width:20px;height:20px;stroke:var(--amber-deep);stroke-width:2.2;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.pricing .addcard .at{flex:1}
+.pricing .addcard .at .t{font-size:14px;font-weight:700}
+.pricing .addcard .at .d{font-size:11.5px;color:var(--ink-soft);margin-top:3px;line-height:1.5}
+.pricing .addcard .ap{font-size:16px;font-weight:800;color:var(--ink);font-variant-numeric:tabular-nums}
+.pricing .addcard .ap small{display:block;font-size:10px;font-weight:500;color:var(--ink-faint);text-align:right}
+
+.pricing .compare{max-width:660px;margin:34px auto 0;padding:0 24px}
+.pricing .compare .h{font-size:12px;font-weight:600;letter-spacing:1.2px;color:var(--ink-faint);text-transform:uppercase;text-align:center;margin-bottom:14px}
+.pricing .ctab{border:1px solid var(--line);border-radius:16px;overflow:hidden;background:var(--surface)}
+.pricing .crow{display:grid;grid-template-columns:1.4fr 1fr 1fr;align-items:center}
+.pricing .crow>div{padding:13px 16px;font-size:13px}
+.pricing .crow.head>div{background:var(--surface-2);font-weight:700;font-size:12px}
+.pricing .crow.head .c-pro{color:var(--amber-deep)}
+.pricing .crow:not(.head){border-top:1px solid var(--line-soft)}
+.pricing .crow .c-lab{color:var(--ink-soft)}
+.pricing .crow .c-free,.pricing .crow .c-pro{text-align:center;font-weight:600;font-variant-numeric:tabular-nums}
+.pricing .crow .c-pro{color:var(--amber-deep)}
+.pricing .crow.same .c-free,.pricing .crow.same .c-pro{color:var(--sage);font-weight:500}
+.pricing .crow .chk{display:inline-flex;gap:5px;align-items:center;justify-content:center}
+.pricing .crow .chk svg{width:15px;height:15px;stroke:var(--sage);stroke-width:2.6;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.pricing .price-foot{max-width:660px;margin:26px auto 8px;padding:0 24px 52px;text-align:center;font-size:11.5px;color:var(--ink-faint);line-height:1.7}
+.pricing .price-foot b{color:var(--ink-soft);font-weight:600}
+
+@media(max-width:560px){
+  .pricing .plans,.pricing .addgrid{grid-template-columns:1fr}
+  .pricing .crow{grid-template-columns:1.3fr .85fr .85fr}
+  .pricing .crow>div{padding:11px 10px;font-size:12px}
+}

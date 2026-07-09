@@ -17,11 +17,23 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 1,
     },
     {
+      url: `${SITE_URL}/pricing`,
+      lastModified: now,
+      changeFrequency: 'monthly',
+      priority: 0.9,
+    },
+    {
       url: `${SITE_URL}/blog`,
       lastModified: posts[0] ? new Date(posts[0].updated) : now,
       changeFrequency: 'weekly',
       priority: 0.8,
     },
+    ...(['/terms', '/privacy', '/refunds'] as const).map((p) => ({
+      url: `${SITE_URL}${p}`,
+      lastModified: now,
+      changeFrequency: 'yearly' as const,
+      priority: 0.3,
+    })),
     ...posts.map((p) => ({
       url: `${SITE_URL}/blog/${p.slug}`,
       lastModified: new Date(p.updated),
