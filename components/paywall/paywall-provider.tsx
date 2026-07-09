@@ -88,8 +88,27 @@ export function PaywallProvider({ children }: { children: ReactNode }) {
     [credits, refreshCredits, isMember, openCreditWall, openSpaceWall],
   );
 
+  const openPortal = useCallback(async () => {
+    try {
+      const r = await fetch('/api/portal', { method: 'POST' });
+      const b = await r.json().catch(() => ({}));
+      if (r.ok && b.url) window.location.href = b.url;
+      else alert('打开订阅管理失败，请稍后再试。');
+    } catch {
+      alert('打开订阅管理失败，请稍后再试。');
+    }
+  }, []);
+
   return (
     <Ctx.Provider value={api}>
+      {credits?.status === 'past_due' && (
+        <div className="pw-dunning">
+          <span>
+            你的会员续费未成功，权益将在宽限期后暂停。请更新支付方式以继续。
+          </span>
+          <button onClick={openPortal}>更新支付方式</button>
+        </div>
+      )}
       {children}
       {wall.kind === 'credit' && (
         <CreditWall
