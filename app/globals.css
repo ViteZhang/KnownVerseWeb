@@ -683,7 +683,8 @@ a{color:inherit;text-decoration:none}
 .legal .placeholder{color:var(--danger);background:var(--danger-wash,rgba(192,88,75,.1));padding:1px 6px;border-radius:5px;font-size:13px}
 
 /* ---- 定价页 ---- */
-.pricing{--maxw:820px}
+/* 不覆盖 --maxw：共享的 nav/footer(.wrap)与落地页/法务页对齐到站点 1080px；
+   定价正文各分区自带 660px 等宽度,独立居中,不依赖 .wrap。 */
 .pricing .price-hero{text-align:center;padding:52px 24px 26px;background:radial-gradient(700px 300px at 50% 0%,var(--amber-wash),transparent 70%)}
 .pricing .price-hero .eb{font-size:11.5px;font-weight:700;letter-spacing:2px;color:var(--amber-deep);text-transform:uppercase}
 .pricing .price-hero h1{font-family:var(--font-read);font-size:32px;font-weight:700;margin:14px 0 12px;line-height:1.3;letter-spacing:.3px}

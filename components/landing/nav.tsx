@@ -11,6 +11,7 @@ export function LandingNav() {
         <div className="navlinks">
           <a href="#how">它怎么运作</a>
           <a href="#cases">学什么</a>
+          <a href="/pricing">定价</a>
           <a href="/blog">博客</a>
           <StartCta className="navcta btn btn-primary">免费开始</StartCta>
         </div>
