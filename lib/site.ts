@@ -2,7 +2,8 @@
 export const SITE_URL = 'https://knowledgeverse.space';
 export const SITE_NAME = '知识宇宙';
 export const SITE_NAME_EN = 'Knowledgeverse';
-export const COMPANY = '北京筑梦探索科技有限公司';
+// 运营主体:个人开发者,无公司实体。法务页/结构化数据统一用品牌名 + 联系邮箱,弱化个人姓名。
+export const COMPANY = '知识宇宙(Knowledgeverse)';
 
 // 首页 title / description —— 与原型 <title> / <meta name="description"> 一致（§5.2）。
 export const SITE_TITLE =
