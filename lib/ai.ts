@@ -20,19 +20,46 @@ export type AskParams = {
   question: string;
 };
 
+// 积分耗尽信号（Phase 3 §9）：ai-task 返回 402 { error:'CREDITS_EXHAUSTED', balance, needed }
+// 时,把它结构化透传给 UI —— Slice 4 的积分墙据此弹窗。
+export type CreditsExhausted = { balance: number; needed: number };
+
+/** 从 supabase-js FunctionsHttpError 的原始 Response 里读积分耗尽信号。 */
+async function readExhausted(error: unknown): Promise<CreditsExhausted | null> {
+  try {
+    const ctx = (error as { context?: Response })?.context;
+    if (ctx && typeof ctx.json === 'function') {
+      const body = await ctx.json();
+      if (body?.error === 'CREDITS_EXHAUSTED') {
+        return { balance: body.balance ?? 0, needed: body.needed ?? 0 };
+      }
+    }
+  } catch {
+    // 解析失败：当作普通错误处理。
+  }
+  return null;
+}
+
 export type AskResult =
   | { answer: string; error: null }
-  | { answer: null; error: string };
+  | { answer: null; error: string; exhausted?: CreditsExhausted };
 
 const FRIENDLY_FALLBACK = 'AI 暂时没能回答，请稍后再试。';
+const CREDITS_MSG = '本月积分已用完。';
 
 /** 问 AI（task='ask'）。返回 Markdown 文本或友好错误文案。 */
 export async function askAI(params: AskParams): Promise<AskResult> {
   try {
     const { data, error } = await getSupabase().functions.invoke('ai-task', {
-      body: { task: 'ask', ...params },
+      // idemKey：同一次提问的重试不重复扣费（服务端幂等键）。
+      body: { task: 'ask', idemKey: crypto.randomUUID(), ...params },
     });
-    if (error) return { answer: null, error: FRIENDLY_FALLBACK };
+    if (error) {
+      const ex = await readExhausted(error);
+      return ex
+        ? { answer: null, error: CREDITS_MSG, exhausted: ex }
+        : { answer: null, error: FRIENDLY_FALLBACK };
+    }
     if (data && typeof data.answer === 'string' && data.answer.trim()) {
       return { answer: data.answer, error: null };
     }
@@ -44,7 +71,7 @@ export async function askAI(params: AskParams): Promise<AskResult> {
 
 export type GenUnitResult =
   | { content: ContentBlock[]; error: null }
-  | { content: null; error: string };
+  | { content: null; error: string; exhausted?: CreditsExhausted };
 
 const GEN_FALLBACK = '内容生成失败，请稍后重试。';
 
@@ -57,7 +84,12 @@ export async function genUnit(
     const { data, error } = await getSupabase().functions.invoke('ai-task', {
       body: { task: 'gen_unit', spaceId, unitId },
     });
-    if (error) return { content: null, error: GEN_FALLBACK };
+    if (error) {
+      const ex = await readExhausted(error);
+      return ex
+        ? { content: null, error: CREDITS_MSG, exhausted: ex }
+        : { content: null, error: GEN_FALLBACK };
+    }
     if (data && Array.isArray(data.content) && data.content.length > 0) {
       return { content: data.content as ContentBlock[], error: null };
     }
@@ -69,7 +101,11 @@ export async function genUnit(
 
 // 每收到一个块就回调 onBlock；返回收齐的块 + error（用于固化/兜底判断）。
 // NDJSON 流格式（见 ai-task §6.6）：每行 {"block":{…}} / 末行 {"done":true} / 出错 {"error":"…"}。
-export type GenStreamResult = { blocks: ContentBlock[]; error: string | null };
+export type GenStreamResult = {
+  blocks: ContentBlock[];
+  error: string | null;
+  exhausted?: CreditsExhausted;
+};
 
 /** 生成单元内容（task='gen_unit', stream=true）。边收边回调 onBlock 逐块渲染。 */
 export async function genUnitStream(
@@ -97,6 +133,15 @@ export async function genUnitStream(
       },
       body: JSON.stringify({ task: 'gen_unit', stream: true, spaceId, unitId }),
     });
+    // 积分不足：服务端在开流前回 402 JSON（非 NDJSON 流），据此弹积分墙（Slice 4）。
+    if (resp.status === 402) {
+      const body = await resp.json().catch(() => null);
+      return {
+        blocks,
+        error: CREDITS_MSG,
+        exhausted: { balance: body?.balance ?? 0, needed: body?.needed ?? 0 },
+      };
+    }
     if (!resp.ok || !resp.body) return { blocks, error: GEN_FALLBACK };
 
     const reader = resp.body.getReader();
