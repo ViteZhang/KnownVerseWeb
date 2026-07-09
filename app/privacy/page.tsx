@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 
 import { LegalShell } from '@/components/legal/shell';
-import { COMPANY, SITE_NAME, SITE_URL } from '@/lib/site';
+import { COMPANY, DATA_REGION, SITE_NAME, SITE_URL, SUPPORT_EMAIL } from '@/lib/site';
 
 export const metadata: Metadata = {
   title: '隐私政策',
@@ -12,7 +12,7 @@ export const metadata: Metadata = {
 
 const UPDATED = '2026-07-09';
 
-// 合规样板。标红 [待确认] 处需创始人/法务定稿。
+// 合规样板。邮箱/存储区域等具体值集中在 lib/site.ts。
 export default function PrivacyPage() {
   return (
     <LegalShell eyebrow="Privacy Policy" title="隐私政策" updated={UPDATED}>
@@ -64,9 +64,7 @@ export default function PrivacyPage() {
 
       <h2>5. 数据存储与安全</h2>
       <p>
-        我们采取合理的技术与管理措施保护你的信息,包括传输加密与访问控制。你的积分、订阅与额度等敏感字段只能由服务端在校验后写入,客户端无写入权限。数据可能存储于
-        {' '}
-        <span className="placeholder">[待确认:数据存储所在地/区域,如新加坡 ap-southeast-1]</span>。
+        我们采取合理的技术与管理措施保护你的信息,包括传输加密与访问控制。你的积分、订阅与额度等敏感字段只能由服务端在校验后写入,客户端无写入权限。数据主要存储于 {DATA_REGION}。
       </p>
 
       <h2>6. 你的权利</h2>
@@ -94,7 +92,7 @@ export default function PrivacyPage() {
       <h2>10. 联系我们</h2>
       <p>
         如对本隐私政策或你的个人信息有任何疑问或请求,请联系:
-        <span className="placeholder">[待确认:隐私事务邮箱,如 privacy@knowledgeverse.space]</span>。
+        <a href={`mailto:${SUPPORT_EMAIL}`}>{SUPPORT_EMAIL}</a>。
       </p>
       <p>
         运营主体:{COMPANY}

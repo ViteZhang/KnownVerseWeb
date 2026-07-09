@@ -10,6 +10,12 @@ export const SITE_TITLE =
 export const SITE_DESCRIPTION =
   '聊天框适合问答，不适合学习。知识宇宙把每一个学习目标变成独立的学习空间——AI 为你生成学习路径、可随手划线提问、问答自动沉淀。面向华语终身学习者。';
 
+// 法务 / 合规常量（Phase 3）：集中一处，法务页与结算说明共用，改一处即全站生效。
+export const SUPPORT_EMAIL = 'zhangzhao@dreamerlab.cn';
+export const GOVERNING_LAW = '新加坡共和国法律'; // 管辖条款引用法律体系，非宪法
+export const DATA_REGION = '新加坡（Singapore · ap-southeast-1）';
+export const REFUND_SLA = '5 个工作日';
+
 // OG 用更口语的一句，取自原型 og:title / og:description。
 export const OG_TITLE = SITE_TITLE;
 export const OG_DESCRIPTION =

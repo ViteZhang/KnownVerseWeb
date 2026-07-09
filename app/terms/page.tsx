@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 
 import { LegalShell } from '@/components/legal/shell';
-import { COMPANY, SITE_NAME, SITE_URL } from '@/lib/site';
+import { COMPANY, GOVERNING_LAW, SITE_NAME, SITE_URL, SUPPORT_EMAIL } from '@/lib/site';
 
 export const metadata: Metadata = {
   title: '服务条款',
@@ -12,8 +12,8 @@ export const metadata: Metadata = {
 
 const UPDATED = '2026-07-09';
 
-// 说明:以下为合规样板(含 Paddle 代收、自动续费披露、一键取消、退款指引)。
-// 标红 [待确认] 处需创始人/法务定稿后替换。
+// 合规样板(含 Paddle 代收、自动续费披露、一键取消、退款指引);
+// 邮箱/管辖地等具体值集中在 lib/site.ts,便于统一维护。
 export default function TermsPage() {
   return (
     <LegalShell eyebrow="Terms of Service" title="服务条款" updated={UPDATED}>
@@ -110,8 +110,8 @@ export default function TermsPage() {
 
       <h2>12. 适用法律与联系</h2>
       <p>
-        本条款适用 <span className="placeholder">[待确认:适用法律/管辖地,如中华人民共和国法律]</span>。
-        如有任何疑问,请联系我们:<span className="placeholder">[待确认:客服邮箱,如 support@knowledgeverse.space]</span>。
+        本条款适用 {GOVERNING_LAW}。
+        如有任何疑问,请联系我们:<a href={`mailto:${SUPPORT_EMAIL}`}>{SUPPORT_EMAIL}</a>。
       </p>
       <p>
         运营主体:{COMPANY}

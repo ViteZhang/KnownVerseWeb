@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 
 import { LegalShell } from '@/components/legal/shell';
-import { COMPANY, SITE_NAME, SITE_URL } from '@/lib/site';
+import { COMPANY, REFUND_SLA, SITE_NAME, SITE_URL, SUPPORT_EMAIL } from '@/lib/site';
 
 export const metadata: Metadata = {
   title: '退款政策',
@@ -12,7 +12,7 @@ export const metadata: Metadata = {
 
 const UPDATED = '2026-07-09';
 
-// 口径:14 天无理由退款(创始人确认)。标红 [待确认] 处需定稿。
+// 口径:14 天无理由退款(创始人确认)。邮箱/时限集中在 lib/site.ts。
 export default function RefundsPage() {
   return (
     <LegalShell eyebrow="Refund Policy" title="退款政策" updated={UPDATED}>
@@ -54,9 +54,7 @@ export default function RefundsPage() {
           在你收到的 Paddle 付款邮件中,通过其中的链接直接向 Paddle 发起退款/联系;或
         </li>
         <li>
-          发送邮件至 <span className="placeholder">[待确认:退款客服邮箱,如 support@knowledgeverse.space]</span>,附上你的<strong>付款邮箱</strong>与<strong>订单号</strong>(可在 Paddle 收据中找到),我们会在
-          {' '}
-          <span className="placeholder">[待确认:处理时限,如 5 个工作日]</span>内处理。
+          发送邮件至 <a href={`mailto:${SUPPORT_EMAIL}`}>{SUPPORT_EMAIL}</a>,附上你的<strong>付款邮箱</strong>与<strong>订单号</strong>(可在 Paddle 收据中找到),我们会在 {REFUND_SLA}内处理。
         </li>
       </ul>
       <p>退款将原路退回你的原支付方式;到账时间取决于你的支付渠道与发卡行。</p>
@@ -74,7 +72,7 @@ export default function RefundsPage() {
         <br />
         网站:<a href={SITE_URL}>{SITE_URL}</a>
         <br />
-        退款与账单问题:<span className="placeholder">[待确认:客服邮箱]</span>
+        退款与账单问题:<a href={`mailto:${SUPPORT_EMAIL}`}>{SUPPORT_EMAIL}</a>
       </p>
     </LegalShell>
   );
