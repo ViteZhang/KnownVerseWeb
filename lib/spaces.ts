@@ -19,10 +19,11 @@ export type CreateSpaceInput = {
   staticProfile: Record<string, unknown>;
 };
 
-/** 建 spaces 一行 + space_profiles 一行(static)。返回新 spaceId。 */
+/** 建 spaces 一行 + space_profiles 一行(static)。返回新 spaceId。
+ *  limitReached=true 表示撞到空间上限(SPACE_LIMIT_REACHED),调用方据此弹空间墙。 */
 export async function createSpace(
   input: CreateSpaceInput,
-): Promise<{ spaceId: string | null; error: string | null }> {
+): Promise<{ spaceId: string | null; error: string | null; limitReached?: boolean }> {
   const supabase = getSupabase();
   const {
     data: { session },
@@ -39,10 +40,11 @@ export async function createSpace(
     .select('id')
     .single();
   if (ins.error) {
-    const msg = /SPACE_LIMIT_REACHED/.test(ins.error.message)
+    const limitReached = /SPACE_LIMIT_REACHED/.test(ins.error.message);
+    const msg = limitReached
       ? '已达当前可创建的学习空间上限。邀请好友可再解锁。'
       : ins.error.message;
-    return { spaceId: null, error: msg };
+    return { spaceId: null, error: msg, limitReached };
   }
 
   const spaceId = ins.data.id as string;

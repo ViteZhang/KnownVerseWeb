@@ -3,10 +3,13 @@
 import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
 
+import { PaywallProvider } from '@/components/paywall/paywall-provider';
+
 export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
+// 付费墙上下文包裹整个产品区:余额条 / 积分墙 / 空间墙 全局可用。
 export default function AppAreaLayout({ children }: { children: ReactNode }) {
-  return <>{children}</>;
+  return <PaywallProvider>{children}</PaywallProvider>;
 }

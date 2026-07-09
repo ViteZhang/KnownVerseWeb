@@ -755,3 +755,48 @@ a{color:inherit;text-decoration:none}
   .pricing .crow{grid-template-columns:1.3fr .85fr .85fr}
   .pricing .crow>div{padding:11px 10px;font-size:12px}
 }
+
+/* ═══════════════════════════════════════════════════════════════════
+   Phase 3 付费墙:积分余额条 + 积分墙/空间墙 modal(class 取自《原型 V1》)
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ---- 积分余额条(appbar 内)---- */
+.credit-bar{display:flex;align-items:center;gap:10px;padding:7px 12px;background:var(--surface-2);border:1px solid var(--line);border-radius:12px;min-width:210px}
+.credit-bar .cb-coin{width:24px;height:24px;border-radius:50%;background:var(--amber-wash);border:1px solid var(--amber-line);display:grid;place-items:center;flex:none}
+.credit-bar .cb-coin svg{width:13px;height:13px}
+.credit-bar .cb-meta{flex:1;min-width:120px}
+.credit-bar .cb-lab{font-size:11px;color:var(--ink-soft);display:flex;justify-content:space-between;margin-bottom:4px;gap:8px}
+.credit-bar .cb-lab b{font-weight:600;color:var(--ink)}
+.credit-bar .cb-num{font-variant-numeric:tabular-nums;white-space:nowrap}
+.credit-bar .cb-track{height:6px;border-radius:999px;background:#E9E2D5;overflow:hidden}
+.credit-bar .cb-fill{height:100%;border-radius:999px;background:linear-gradient(90deg,var(--amber),var(--amber-deep));transition:width .35s ease}
+.credit-bar.low .cb-fill{background:linear-gradient(90deg,#D98A3C,var(--danger))}
+.credit-bar .cb-reset{font-size:10.5px;color:var(--ink-faint);flex:none;text-align:right;line-height:1.3;white-space:nowrap}
+@media(max-width:680px){.credit-bar{min-width:0;padding:6px 8px}.credit-bar .cb-reset{display:none}}
+
+/* ---- 付费墙 modal ---- */
+.pw-scrim{position:fixed;inset:0;background:rgba(24,22,18,.42);backdrop-filter:blur(2px);display:flex;align-items:center;justify-content:center;padding:24px;z-index:120;animation:pw-fade .22s ease}
+@keyframes pw-fade{from{opacity:0}to{opacity:1}}
+.pw-sheet{background:var(--surface);border-radius:22px;box-shadow:var(--shadow-lg);width:100%;max-width:430px;overflow:hidden}
+.pw-cap{padding:24px 26px 18px;text-align:center;border-bottom:1px solid var(--line-soft)}
+.pw-cap .pw-ic{width:52px;height:52px;border-radius:16px;margin:0 auto 14px;display:grid;place-items:center;background:var(--amber-wash);border:1px solid var(--amber-line)}
+.pw-cap .pw-ic svg{width:24px;height:24px}
+.pw-cap h3{font-size:18px;font-weight:700}
+.pw-cap p{font-size:13px;color:var(--ink-soft);margin-top:8px;line-height:1.6}
+.pw-keep{margin-top:12px;font-size:11.5px;color:var(--sage);background:var(--sage-wash);display:inline-flex;align-items:center;gap:6px;padding:5px 11px;border-radius:999px}
+.pw-opts{padding:18px 22px 8px;display:flex;flex-direction:column;gap:11px}
+.pw-opt{border:1.5px solid var(--line);border-radius:15px;padding:15px 16px;cursor:pointer;display:flex;align-items:center;gap:13px;transition:.16s;background:var(--surface);text-align:left;font-family:inherit;width:100%;text-decoration:none;color:inherit}
+.pw-opt:hover{border-color:var(--amber-line);background:var(--amber-wash)}
+.pw-opt.hero{border-color:var(--amber-deep);background:linear-gradient(180deg,var(--amber-wash),transparent)}
+.pw-opt .pw-oic{width:38px;height:38px;border-radius:11px;background:var(--surface-2);display:grid;place-items:center;flex:none}
+.pw-opt.hero .pw-oic{background:var(--amber-deep)}
+.pw-opt .pw-oic svg{width:19px;height:19px}
+.pw-opt .pw-otx{flex:1}
+.pw-opt .pw-otx .t{font-size:14px;font-weight:600;display:flex;align-items:center;gap:8px}
+.pw-opt .pw-otx .d{font-size:11.5px;color:var(--ink-soft);margin-top:3px;line-height:1.5}
+.pw-opt .pw-price{font-size:14px;font-weight:700;color:var(--ink);text-align:right;flex:none;font-variant-numeric:tabular-nums}
+.pw-opt .pw-price small{display:block;font-size:10px;font-weight:500;color:var(--ink-faint)}
+.pw-badge{font-size:9.5px;font-weight:700;padding:1px 7px;border-radius:999px;background:var(--amber-deep);color:#fff;letter-spacing:.3px}
+.pw-foot{padding:6px 22px 22px;text-align:center}
+.pw-foot button{background:none;border:none;color:var(--ink-faint);font-size:12.5px;cursor:pointer;padding:8px}
+.pw-foot button:hover{color:var(--ink-soft)}

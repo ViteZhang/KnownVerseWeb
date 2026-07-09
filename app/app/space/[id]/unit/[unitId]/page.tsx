@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { AskDrawer, type SaveStatus } from '@/components/ask-drawer';
 import { ReadingBlocks, headingsOf } from '@/components/reading-blocks';
+import { usePaywall } from '@/components/paywall/paywall-provider';
 import { askAI, genUnitStream } from '@/lib/ai';
 import {
   DEFAULT_PREFS,
@@ -29,6 +30,7 @@ export default function UnitPage({
 }) {
   const { id: spaceId, unitId } = params;
   const router = useRouter();
+  const { openCreditWall, refreshCredits } = usePaywall();
 
   const [loading, setLoading] = useState(true);
   const [unit, setUnit] = useState<Unit | null>(null);
@@ -104,6 +106,11 @@ export default function UnitPage({
       );
     });
     setGenerating(false);
+    if (r.exhausted) {
+      openCreditWall(r.exhausted); // 积分不足 → 弹积分墙
+      setGenError(r.error ?? '本月积分已用完。');
+      return;
+    }
     if (r.error !== null || r.blocks.length === 0) {
       setGenError(r.error ?? '内容生成失败，请稍后重试。');
       return;
@@ -114,9 +121,10 @@ export default function UnitPage({
         ? { ...prev, content: r.blocks, status: 'learning' }
         : prev,
     );
+    refreshCredits(); // 扣费成功 → 刷新余额条
     const p = await persistUnitContent(u.id, r.blocks);
     setPersistWarn(!p.ok);
-  }, []);
+  }, [openCreditWall, refreshCredits]);
 
   // ── 加载单元 + 路径 ───────────────────────────────────────────────
   const load = useCallback(async () => {
@@ -277,10 +285,12 @@ export default function UnitPage({
 
       setAsking(false);
       if (res.error !== null) {
+        if (res.exhausted) openCreditWall(res.exhausted); // 积分不足 → 弹积分墙
         setAskError(res.error);
         return;
       }
       setAnswer(res.answer);
+      refreshCredits(); // 扣费成功 → 刷新余额条
 
       // 后台写入提问记录（最小写入：仅 insert questions），失败不阻塞。
       setSaveStatus('saving');
@@ -292,7 +302,7 @@ export default function UnitPage({
         answer: res.answer,
       }).then((r) => setSaveStatus(r.ok ? 'saved' : 'failed'));
     },
-    [unit, selIndex, selText, blocks],
+    [unit, selIndex, selText, blocks, openCreditWall, refreshCredits],
   );
 
   // ── 目录滚动高亮 + 断点 anchor 防抖保存 ────────────────────────────

@@ -3,6 +3,7 @@ import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { Appbar } from '@/components/appbar';
+import { usePaywall } from '@/components/paywall/paywall-provider';
 import {
   extractUserMemory,
   genPath,
@@ -48,6 +49,7 @@ const splitList = (s: string) =>
 
 export default function NewSpacePage() {
   const router = useRouter();
+  const { openSpaceWall } = usePaywall();
 
   const [step, setStep] = useState<Step>('input');
   const [initialInput, setInitialInput] = useState('');
@@ -182,6 +184,7 @@ export default function NewSpacePage() {
       staticProfile,
     });
     if (created.error || !created.spaceId) {
+      if (created.limitReached) openSpaceWall(); // 撞空间上限 → 弹空间墙
       setError(created.error ?? '创建空间失败。');
       return;
     }
