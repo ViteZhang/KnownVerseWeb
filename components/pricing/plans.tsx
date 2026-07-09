@@ -1,9 +1,11 @@
 'use client';
 import Link from 'next/link';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import type { BillingConfig } from '@/lib/billing';
 import { DISPLAY_PRICES } from '@/lib/billing';
+import { openCheckout } from '@/lib/paddle';
+import { getSupabase } from '@/lib/supabase/client';
 
 // 定价页交互卡片(《原型 V1》定价页)。年付/月付切换在客户端;数字来自服务端传入的 billing_config。
 // 结账按钮本片先指向 /login(登录后进 /app 才有 Paddle.js Checkout,Slice 4 接);
@@ -17,6 +19,50 @@ const Check = () => (
 export function PricingPlans({ cfg }: { cfg: BillingConfig }) {
   const [bill, setBill] = useState<'year' | 'month'>('year');
   const isYear = bill === 'year';
+
+  // 登录态(客户端判断,不进 SSG 渲染路径):有会话才走结账,否则去登录。
+  const [user, setUser] = useState<{ id: string; email?: string } | null>(null);
+  // 测试价格覆盖:?price=<id> 时用它下单(联调 $0.1 用,不写死进代码)。
+  const [testPrice, setTestPrice] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    let alive = true;
+    getSupabase()
+      .auth.getSession()
+      .then(({ data }) => {
+        if (alive && data.session?.user) {
+          setUser({ id: data.session.user.id, email: data.session.user.email ?? undefined });
+        }
+      });
+    // 用 location.search 而非 useSearchParams,避免把 SSG 页拖成动态渲染。
+    const p = new URLSearchParams(window.location.search).get('price');
+    if (p) setTestPrice(p);
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  const proPriceId = testPrice ?? (isYear ? cfg.price_pro_yearly : cfg.price_pro_monthly);
+
+  async function handleUpgrade() {
+    if (!user) {
+      window.location.href = '/login?next=/pricing';
+      return;
+    }
+    if (!proPriceId) {
+      alert('价格尚未配置(billing_config 缺 price id)。');
+      return;
+    }
+    setBusy(true);
+    try {
+      await openCheckout({ priceId: proPriceId, userId: user.id, email: user.email });
+    } catch (e) {
+      alert('结账初始化失败:' + (e instanceof Error ? e.message : String(e)));
+    } finally {
+      setBusy(false);
+    }
+  }
 
   return (
     <>
@@ -102,9 +148,9 @@ export function PricingPlans({ cfg }: { cfg: BillingConfig }) {
               <span>积分随时可加购,一键退订</span>
             </li>
           </ul>
-          <Link href="/login" className="cta" style={{ display: 'block', textAlign: 'center', textDecoration: 'none' }}>
-            升级到 Pro
-          </Link>
+          <button className="cta" onClick={handleUpgrade} disabled={busy}>
+            {busy ? '正在打开结账…' : testPrice ? '测试结账($0.1)' : '升级到 Pro'}
+          </button>
         </div>
       </div>
     </>
