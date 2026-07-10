@@ -292,6 +292,32 @@ a{color:inherit;text-decoration:none}
 .genwrap p{font-size:13.5px;color:var(--ink-soft);line-height:1.7;max-width:340px}
 .genwrap .retry{margin-top:18px}
 
+/* ============ READING · 移动端 H5 适配 ============ */
+/* 桌面为「左轨道 + 正文 + 右目录」三栏；窄屏塌成单栏，两侧栏隐藏，
+   正文占满可视宽度，避免被固定侧栏挤压导致无法阅读（微信内置浏览器等）。 */
+@media(max-width:820px){
+  .read-grid,.read-grid.rail-collapsed{grid-template-columns:1fr}
+  .read-rail,.toc{display:none}
+  .reading{padding:18px 16px 96px}
+  .read-inner{max-width:none}
+  /* 轨道已隐藏，「收起目录」按钮无意义 —— 隐去，返回路径改用右侧文字入口 */
+  .rd-top .railtoggle{display:none}
+  .rd-title{font-size:24px;line-height:1.34}
+  .rd-h2{font-size:19px;margin:30px 0 14px}
+  .rd-h3{font-size:16px;margin:22px 0 10px}
+  /* 划词问 AI 抽屉在窄屏铺满，问答内容更好读 */
+  .drawer{width:100%;max-width:100%}
+}
+
+/* ============ APPBAR · 移动端收紧（防横向溢出）============ */
+@media(max-width:640px){
+  .appbar{gap:10px;padding:14px 16px 12px}
+  .appbar .word{font-size:19px}
+  .appbar nav{margin-left:0;gap:2px}
+  .appbar nav a{padding:6px 9px;font-size:13px}
+  .appbar .avatar{width:34px;height:34px;font-size:14px}
+}
+
 /* ============ QUESTION LOG ============ */
 .qlog-wrap{max-width:760px;margin:0 auto;padding:6px 28px 60px}
 .qlog-head h1{font-family:var(--font-read);font-size:28px;font-weight:600;letter-spacing:.4px}
