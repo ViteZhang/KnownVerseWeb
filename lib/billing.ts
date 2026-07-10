@@ -55,6 +55,12 @@ export async function getBillingConfigPublic(): Promise<BillingConfig> {
   }
 }
 
+// 整页要本地化预览的全部 price id(一次批量拉取,plans/addons 共用缓存)。
+// 放在这个非 'use client' 模块,server 与 client 都能安全 import + 调用。
+export function allBillingPriceIds(cfg: BillingConfig): (string | null)[] {
+  return [cfg.price_pro_yearly, cfg.price_pro_monthly, cfg.price_credit_pack, cfg.price_space_pack];
+}
+
 // 约算:80 积分 ≈ 6 次单元 + 30 次问 AI(示意)。单元 10 / 问 AI 1。
 export function estimateUnits(credits: number, cfg: BillingConfig): number {
   return Math.floor((credits * 0.75) / cfg.cost_unit_generation);

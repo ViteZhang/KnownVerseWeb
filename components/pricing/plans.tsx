@@ -3,9 +3,11 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 
 import type { BillingConfig } from '@/lib/billing';
-import { DISPLAY_PRICES } from '@/lib/billing';
+import { allBillingPriceIds, DISPLAY_PRICES } from '@/lib/billing';
 import { openCheckout } from '@/lib/paddle';
 import { getSupabase } from '@/lib/supabase/client';
+
+import { LocalizedPrice } from './localized-price';
 
 // 定价页交互卡片(《原型 V1》定价页)。年付/月付切换在客户端;数字来自服务端传入的 billing_config。
 // 结账按钮本片先指向 /login(登录后进 /app 才有 Paddle.js Checkout,Slice 4 接);
@@ -19,6 +21,7 @@ const Check = () => (
 export function PricingPlans({ cfg }: { cfg: BillingConfig }) {
   const [bill, setBill] = useState<'year' | 'month'>('year');
   const isYear = bill === 'year';
+  const allPriceIds = allBillingPriceIds(cfg);
 
   // 登录态(客户端判断,不进 SSG 渲染路径):有会话才走结账,否则去登录。
   const [user, setUser] = useState<{ id: string; email?: string } | null>(null);
@@ -118,13 +121,17 @@ export function PricingPlans({ cfg }: { cfg: BillingConfig }) {
           <div className="rib">最划算</div>
           <div className="pname">Pro 会员</div>
           <div className="amt">
-            <span className="big">{isYear ? DISPLAY_PRICES.proYearly : DISPLAY_PRICES.proMonthly}</span>
+            <span className="big">
+              <LocalizedPrice
+                priceId={isYear ? cfg.price_pro_yearly : cfg.price_pro_monthly}
+                allIds={allPriceIds}
+                fallback={isYear ? DISPLAY_PRICES.proYearly : DISPLAY_PRICES.proMonthly}
+              />
+            </span>
             <span className="per">{isYear ? '/年' : '/月'}</span>
           </div>
           <div className="permo">
-            {isYear
-              ? `约 ${DISPLAY_PRICES.proYearlyPerMonth}/月 · 比月付省约 4 个月`
-              : '灵活月付 · 随时退订'}
+            {isYear ? '按年一次性计费 · 比月付更省 · 随时退订' : '灵活月付 · 随时退订'}
           </div>
           <ul>
             <li>

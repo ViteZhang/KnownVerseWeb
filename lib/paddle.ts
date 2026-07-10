@@ -54,6 +54,39 @@ export function loadPaddle(): Promise<any> {
   return ready;
 }
 
+// 价格本地化预览(Paddle 域名审核要求「页面价格 = 结账价格」)。
+// 用 Paddle.PricePreview 拉当前买家所在地区的真实价格,页面直接展示它,和结账一模一样。
+// 按 priceId 排序缓存,全页只发一次请求;失败返回空表,调用方回退到静态展示价。
+const previewCache: Record<string, Promise<Record<string, string>>> = {};
+
+export function previewPrices(priceIds: string[]): Promise<Record<string, string>> {
+  const ids = priceIds.filter(Boolean);
+  const key = [...ids].sort().join(',');
+  if (!key) return Promise.resolve({});
+  if (!previewCache[key]) {
+    previewCache[key] = (async () => {
+      try {
+        const Paddle = await loadPaddle();
+        const res = await Paddle.PricePreview({
+          items: ids.map((id) => ({ priceId: id, quantity: 1 })),
+        });
+        const map: Record<string, string> = {};
+        for (const li of res?.data?.details?.lineItems ?? []) {
+          const id = li?.price?.id;
+          // 用 total(买家实付的全额,含地区税处理)—— 与 Paddle 结账页显示一致,
+          // 也是 Paddle 本地化定价文档推荐的展示字段。页面另有税费提示。
+          const formatted = li?.formattedTotals?.total ?? li?.formattedTotals?.subtotal;
+          if (id && formatted) map[id] = formatted;
+        }
+        return map;
+      } catch {
+        return {};
+      }
+    })();
+  }
+  return previewCache[key];
+}
+
 /** 打开 Pro 订阅 / 加购的 overlay 结账。priceId 由 billing_config 提供;user_id 用于灵魂链路回填。 */
 export async function openCheckout(opts: {
   priceId: string;

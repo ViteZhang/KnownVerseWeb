@@ -4,9 +4,11 @@ import type { Metadata } from 'next';
 
 import { PricingJsonLd } from '@/components/pricing/json-ld';
 import { PricingPlans } from '@/components/pricing/plans';
+import { LocalizedPrice } from '@/components/pricing/localized-price';
 import { LandingFooter } from '@/components/landing/footer';
 import { SiteNav } from '@/components/site-nav';
 import {
+  allBillingPriceIds,
   DISPLAY_PRICES,
   getBillingConfigPublic,
   type BillingConfig,
@@ -81,8 +83,11 @@ export default async function PricingPage() {
                 <div className="d">+{cfg.credit_pack_amount} 积分 · 持久不重置,用完为止</div>
               </div>
               <div className="ap">
-                {DISPLAY_PRICES.creditPack}
-                <small>起</small>
+                <LocalizedPrice
+                  priceId={cfg.price_credit_pack}
+                  allIds={allBillingPriceIds(cfg)}
+                  fallback={DISPLAY_PRICES.creditPack}
+                />
               </div>
             </div>
             <div className="addcard">
@@ -97,7 +102,13 @@ export default async function PricingPage() {
                 <div className="t">空间包</div>
                 <div className="d">+{cfg.space_pack_amount} 个空间 · 一次性,不订阅也能开</div>
               </div>
-              <div className="ap">{DISPLAY_PRICES.spacePack}</div>
+              <div className="ap">
+                <LocalizedPrice
+                  priceId={cfg.price_space_pack}
+                  allIds={allBillingPriceIds(cfg)}
+                  fallback={DISPLAY_PRICES.spacePack}
+                />
+              </div>
             </div>
           </div>
         </div>
@@ -144,9 +155,11 @@ export default async function PricingPage() {
         </div>
 
         <div className="price-foot">
-          由 <b>Paddle</b> 代收全球税费并开票,支持卡 / PayPal / Apple·Google Pay / 支付宝 / 微信 · 一键退订。
+          <b>Taxes may apply and will be calculated at checkout.</b> 税费在结账时按你所在地区计算。
           <br />
-          价格因地区自动本地化展示。订阅到期自动续费,可随时在「我的」里一键取消。
+          价格按你所在地区自动本地化,页面所示与 Paddle 结账页一致。Pro 订阅到期自动续费,可随时在「订阅管理」一键取消。
+          <br />
+          由 <b>Paddle</b>(Merchant of Record)代收全球税费并开票,支持卡 / PayPal / Apple·Google Pay / 支付宝 / 微信。
           <br />
           详见 <a href="/terms" style={{ color: 'var(--ink-soft)' }}>服务条款</a> 与{' '}
           <a href="/refunds" style={{ color: 'var(--ink-soft)' }}>退款政策</a>。
