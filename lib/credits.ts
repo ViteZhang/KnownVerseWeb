@@ -1,14 +1,15 @@
-// 积分余额读取(Phase 3 §9)。走 get_credit_status RPC:服务端 auth.uid() 认人 +
-// 「读前懒重置」,所以余额条拿到的一定是当月已刷新的真值,不在客户端算。
+// 纯积分制:余额读取 + 用户端积分动作(《终版》§3、§4)。
+// 余额走 get_credit_status(服务端 auth.uid() 认人),签到/兑换/建空间扣费走各自 RPC。
+// 客户端只读余额,一切写入在服务端 SECURITY DEFINER 函数里。
 import { getSupabase } from '@/lib/supabase/client';
 
 export type CreditStatus = {
-  balance: number; // granted + purchased
-  granted: number;
-  purchased: number;
-  monthly: number; // 本档月度发放量(免费 80 / 会员 800)
-  periodEnd: string | null; // 本轮到期(免费=下月刷新锚点;会员=next_billed_at)
-  status: string; // none / active / past_due / canceled
+  free: number; // 免费桶(签到/邀请;上限 free_cap;先被扣)
+  paid: number; // 充值桶(新手包/激活码;无上限、永不过期;后被扣)
+  balance: number; // free + paid
+  freeCap: number;
+  checkinCredits: number;
+  checkedToday: boolean;
 };
 
 export async function getCreditStatus(): Promise<CreditStatus | null> {
@@ -16,24 +17,94 @@ export async function getCreditStatus(): Promise<CreditStatus | null> {
     const { data, error } = await getSupabase().rpc('get_credit_status');
     if (error || !data?.ok) return null;
     return {
+      free: data.free ?? 0,
+      paid: data.paid ?? 0,
       balance: data.balance ?? 0,
-      granted: data.granted ?? 0,
-      purchased: data.purchased ?? 0,
-      monthly: data.monthly ?? 0,
-      periodEnd: data.period_end ?? null,
-      status: data.status ?? 'none',
+      freeCap: data.free_cap ?? 100,
+      checkinCredits: data.checkin_credits ?? 5,
+      checkedToday: Boolean(data.checked_today),
     };
   } catch {
     return null;
   }
 }
 
-/** 距下次刷新的人话文案(免费档按月;会员按 next_billed_at)。 */
-export function resetHint(periodEnd: string | null): string {
-  if (!periodEnd) return '';
-  const end = new Date(periodEnd).getTime();
-  const days = Math.ceil((end - Date.now()) / 86400000);
-  if (days <= 0) return '即将刷新';
-  if (days === 1) return '明天刷新';
-  return `${days} 天后刷新`;
+// 每日签到(§3.2)。ok+granted+capped;capped=true 表示免费桶已满、记为已签但发 0。
+export type ClaimResult = { ok: boolean; granted: number; capped: boolean; reason?: string };
+
+export async function claimDaily(): Promise<ClaimResult> {
+  try {
+    const { data, error } = await getSupabase().rpc('claim_daily_credits');
+    if (error || !data) return { ok: false, granted: 0, capped: false, reason: 'network' };
+    return {
+      ok: Boolean(data.ok),
+      granted: data.granted ?? 0,
+      capped: Boolean(data.capped),
+      reason: data.reason,
+    };
+  } catch {
+    return { ok: false, granted: 0, capped: false, reason: 'network' };
+  }
 }
+
+// 兑换激活码(§4.2)。失败原因统一为 invalid_code(不区分不存在/已用/过期)。
+export type RedeemResult = { ok: boolean; credits?: number; reason?: string };
+
+export async function redeemCode(code: string): Promise<RedeemResult> {
+  try {
+    const { data, error } = await getSupabase().rpc('redeem_credit_code', { p_code: code });
+    if (error || !data) return { ok: false, reason: 'network' };
+    return { ok: Boolean(data.ok), credits: data.credits, reason: data.reason };
+  } catch {
+    return { ok: false, reason: 'network' };
+  }
+}
+
+// 建空间扣费(§5.3):访谈开始前调,idem=客户端一次性 uuid(重试不重扣)。
+export type SpendResult = { ok: boolean; balance?: number; reason?: string; needed?: number };
+
+export async function spendSpaceCreation(idem: string): Promise<SpendResult> {
+  try {
+    const { data, error } = await getSupabase().rpc('spend_space_creation', { p_idem: idem });
+    if (error || !data) return { ok: false, reason: 'network' };
+    return { ok: Boolean(data.ok), balance: data.balance, reason: data.reason, needed: data.needed };
+  } catch {
+    return { ok: false, reason: 'network' };
+  }
+}
+
+// 积分流水(§8⑤)。倒序;RLS 只返回本人。
+export type LedgerRow = {
+  id: number;
+  delta: number;
+  reason: string;
+  balance_after: number | null;
+  created_at: string;
+};
+
+export async function fetchLedger(limit = 100): Promise<LedgerRow[]> {
+  try {
+    const { data, error } = await getSupabase()
+      .from('credit_ledger')
+      .select('id,delta,reason,balance_after,created_at')
+      .order('created_at', { ascending: false })
+      .limit(limit);
+    if (error || !data) return [];
+    return data as LedgerRow[];
+  } catch {
+    return [];
+  }
+}
+
+// 流水 reason → 人话(来源/去向)。
+export const REASON_LABEL: Record<string, string> = {
+  welcome_bonus: '注册新手包',
+  daily_checkin: '每日签到',
+  referral_invitee: '接受邀请',
+  referral_inviter: '邀请好友',
+  redeem_code: '兑换激活码',
+  space_creation: '新建学习空间',
+  unit_generation: '生成学习单元',
+  ask_ai: '划词问 AI',
+  refund: '退回积分',
+};

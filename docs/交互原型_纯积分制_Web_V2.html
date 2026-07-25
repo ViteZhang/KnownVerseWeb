@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>知识宇宙 · 纯积分制交互原型 V2</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#FAF8F3; --surface:#FFFFFF; --surface-2:#F6F2EA;
+  --ink:#20242E; --ink-soft:#565B66; --ink-faint:#9A9EA8;
+  --line:#ECE6DB; --line-soft:#F3EEE5;
+  --amber:#DD9527; --amber-deep:#B0701A; --amber-wash:rgba(221,149,39,.16); --amber-line:rgba(221,149,39,.5);
+  --sage:#5E7A6B; --sage-wash:rgba(94,122,107,.14);
+  --danger:#C0584B; --danger-wash:rgba(192,88,75,.12);
+  --shadow-sm:0 1px 2px rgba(30,32,40,.05);
+  --shadow:0 1px 2px rgba(30,32,40,.04),0 10px 28px rgba(30,32,40,.07);
+  --shadow-lg:0 24px 60px rgba(30,32,40,.18);
+  --font-ui:"Inter","PingFang SC","Hiragino Sans GB","Microsoft YaHei",system-ui,sans-serif;
+  --font-read:"Songti SC","Noto Serif SC","STSong",Georgia,serif;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:var(--font-ui);color:var(--ink);
+  background:radial-gradient(1200px 600px at 50% -10%,#F0EADF 0%,rgba(240,234,223,0) 60%),linear-gradient(180deg,#EFE9DE,#E7E0D3);
+  min-height:100vh;padding:28px 18px 70px;display:flex;flex-direction:column;align-items:center}
+button{font-family:inherit}
+:focus-visible{outline:2.5px solid var(--amber);outline-offset:2px;border-radius:6px}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+.proto-head{text-align:center;margin-bottom:14px}
+.proto-head .mark{font-weight:800;letter-spacing:.4px;font-size:16px}
+.proto-head .mark span{color:var(--amber-deep)}
+.proto-head p{font-size:12.5px;color:#857F73;margin-top:4px}
+.nav{display:flex;flex-wrap:wrap;gap:7px;justify-content:center;max-width:700px;margin:0 auto 10px}
+.nav button{font-size:12.5px;color:#6E6859;background:rgba(255,255,255,.6);border:1px solid rgba(0,0,0,.06);padding:8px 14px;border-radius:999px;cursor:pointer;transition:.18s}
+.nav button:hover{background:#fff;color:var(--ink)}
+.nav button.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+.wallet-note{text-align:center;font-size:11.5px;color:#857F73;margin-bottom:20px}
+.wallet-note b{color:var(--amber-deep);font-variant-numeric:tabular-nums}
+.wallet-note button{background:none;border:none;color:#8B8375;font-size:11.5px;text-decoration:underline;cursor:pointer;margin-left:8px}
+
+.stage{width:100%;max-width:940px}
+.screen{display:none;animation:fade .3s ease}
+.screen.active{display:block}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+.win{background:var(--surface);border:1px solid var(--line);border-radius:18px;box-shadow:var(--shadow);overflow:hidden;position:relative}
+.winbar{display:flex;align-items:center;gap:8px;padding:11px 16px;background:var(--surface-2);border-bottom:1px solid var(--line)}
+.dot{width:11px;height:11px;border-radius:50%;background:#D9D2C4}
+.url{margin-left:10px;flex:1;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:6px 12px;font-size:12px;color:var(--ink-faint)}
+.url b{color:var(--ink-soft);font-weight:500}
+
+.appbar{display:flex;align-items:center;gap:14px;padding:14px 22px;border-bottom:1px solid var(--line-soft);flex-wrap:wrap}
+.brand{font-size:16px;font-weight:800;letter-spacing:.4px}
+.brand span{color:var(--amber-deep)}
+.appbar .crumb{font-size:13px;color:var(--ink-faint)}
+.appbar .spacer{flex:1}
+.avatar{width:34px;height:34px;border-radius:50%;background:var(--ink);color:#fff;display:grid;place-items:center;font-weight:600;font-size:14px;flex:none}
+
+/* balance chip */
+.balance{display:flex;align-items:center;gap:10px;padding:7px 13px;background:var(--surface-2);border:1px solid var(--line);border-radius:999px}
+.balance .coin{width:22px;height:22px;border-radius:50%;background:var(--amber-wash);border:1px solid var(--amber-line);display:grid;place-items:center;flex:none;font-size:11px;font-weight:800;color:var(--amber-deep)}
+.balance .n{font-size:14px;font-weight:700;font-variant-numeric:tabular-nums}
+.balance .u{font-size:11px;color:var(--ink-faint)}
+.balance.low .n{color:var(--danger)}
+
+/* checkin */
+.checkin{display:flex;align-items:center;gap:12px;padding:13px 16px;border:1px solid var(--line);border-radius:14px;background:linear-gradient(180deg,var(--amber-wash),transparent)}
+.checkin .ic{width:38px;height:38px;border-radius:12px;background:var(--surface);border:1px solid var(--amber-line);display:grid;place-items:center;flex:none}
+.checkin .ic svg{width:19px;height:19px;stroke:var(--amber-deep);stroke-width:2.2;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.checkin .tx{flex:1;min-width:150px}
+.checkin .tx .t{font-size:14px;font-weight:700}
+.checkin .tx .d{font-size:11.5px;color:var(--ink-soft);margin-top:3px;line-height:1.5}
+.checkin .btn-c{border:none;background:var(--ink);color:#fff;font-size:13px;font-weight:700;padding:10px 18px;border-radius:11px;cursor:pointer;flex:none;transition:.16s}
+.checkin .btn-c:hover:not(:disabled){transform:translateY(-1px)}
+.checkin .btn-c:disabled{background:var(--surface-2);color:var(--ink-faint);cursor:default;border:1px solid var(--line)}
+.checkin.capped{background:var(--surface-2)}
+.checkin.capped .ic{border-color:var(--line)}
+.checkin.capped .ic svg{stroke:var(--ink-faint)}
+
+.home{padding:22px 26px 30px}
+.hd{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:14px;gap:12px;flex-wrap:wrap}
+.hd h2{font-size:20px;font-weight:700}
+.hd .q{font-size:12px;color:var(--ink-faint)}
+.seclabel{font-size:11px;font-weight:600;letter-spacing:1.2px;color:var(--ink-faint);text-transform:uppercase;margin:22px 0 12px}
+.spacegrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(205px,1fr));gap:14px}
+.spacecard{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:16px;box-shadow:var(--shadow-sm)}
+.spacecard .tag{font-size:10.5px;font-weight:600;color:var(--sage);background:var(--sage-wash);padding:2px 9px;border-radius:999px;display:inline-block}
+.spacecard h3{font-size:15px;margin:11px 0 4px}
+.spacecard .prog{font-size:11.5px;color:var(--ink-faint);margin-bottom:9px}
+.ptrack{height:5px;border-radius:999px;background:#EEE7DA;overflow:hidden}
+.pfill{height:100%;background:var(--sage);border-radius:999px}
+.newcard{border:1.5px dashed var(--line);background:transparent;border-radius:16px;padding:16px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;color:var(--ink-soft);cursor:pointer;min-height:126px;transition:.16s;font-size:13px;font-weight:600}
+.newcard:hover{border-color:var(--amber-line);color:var(--amber-deep);background:var(--amber-wash)}
+.newcard svg{width:22px;height:22px;stroke:currentColor;stroke-width:2;fill:none;stroke-linecap:round}
+.newcard .px{font-size:11px;font-weight:700;color:var(--amber-deep);background:var(--amber-wash);padding:2px 8px;border-radius:999px}
+
+.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:20px}
+.btn{border-radius:12px;padding:11px 17px;font-size:13.5px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:9px;transition:.16s;border:1px solid transparent}
+.btn svg{width:15px;height:15px;stroke-width:2.3;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.btn.primary{background:var(--ink);color:#fff}
+.btn.primary svg{stroke:var(--amber)}
+.btn.ghost{background:var(--surface);border-color:var(--line);color:var(--ink)}
+.btn.ghost:hover{background:var(--surface-2)}
+.btn.ghost svg{stroke:var(--ink-soft)}
+.btn:hover{transform:translateY(-1px)}
+.cost{font-size:11px;font-weight:700;color:var(--amber-deep);background:var(--amber-wash);padding:2px 7px;border-radius:999px;font-variant-numeric:tabular-nums}
+.hintline{font-size:11.5px;color:var(--ink-faint);margin-top:16px;line-height:1.6}
+.hintline b{color:var(--ink-soft)}
+
+.toast{position:fixed;left:50%;bottom:30px;transform:translateX(-50%) translateY(20px);background:var(--ink);color:#fff;font-size:13px;padding:11px 18px;border-radius:12px;box-shadow:var(--shadow-lg);opacity:0;pointer-events:none;transition:.28s;z-index:300}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.toast b{color:var(--amber)}
+
+/* modal */
+.scrim{position:absolute;inset:0;background:rgba(24,22,18,.42);backdrop-filter:blur(2px);display:none;align-items:center;justify-content:center;padding:22px;z-index:60}
+.scrim.show{display:flex;animation:fade .24s ease}
+.sheet{background:var(--surface);border-radius:22px;box-shadow:var(--shadow-lg);width:100%;max-width:430px;overflow:hidden;max-height:92%;overflow-y:auto}
+.sheet .cap{padding:24px 26px 18px;text-align:center;border-bottom:1px solid var(--line-soft)}
+.sheet .cap .ic{width:52px;height:52px;border-radius:16px;margin:0 auto 14px;display:grid;place-items:center;background:var(--amber-wash);border:1px solid var(--amber-line)}
+.sheet .cap .ic svg{width:24px;height:24px;stroke:var(--amber-deep);stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.sheet .cap h3{font-size:18px;font-weight:700}
+.sheet .cap p{font-size:13px;color:var(--ink-soft);margin-top:9px;line-height:1.65}
+.sheet .cap .keep{margin-top:12px;font-size:11.5px;color:var(--sage);background:var(--sage-wash);display:inline-flex;align-items:center;gap:6px;padding:5px 11px;border-radius:999px}
+.sheet .opts{padding:16px 22px 6px;display:flex;flex-direction:column;gap:10px}
+.opt{border:1.5px solid var(--line);border-radius:15px;padding:14px 15px;cursor:pointer;display:flex;align-items:center;gap:13px;transition:.16s;background:var(--surface);text-align:left;width:100%;font-family:inherit}
+.opt:hover{border-color:var(--amber-line);background:var(--amber-wash)}
+.opt.hero{border-color:var(--amber-deep);background:linear-gradient(180deg,var(--amber-wash),transparent)}
+.opt .oic{width:38px;height:38px;border-radius:11px;background:var(--surface-2);display:grid;place-items:center;flex:none}
+.opt.hero .oic{background:var(--amber-deep)}
+.opt .oic svg{width:19px;height:19px;stroke-width:2.2;fill:none;stroke-linecap:round;stroke-linejoin:round;stroke:var(--ink-soft)}
+.opt.hero .oic svg{stroke:#fff}
+.opt .otx{flex:1}
+.opt .otx .t{font-size:14px;font-weight:700}
+.opt .otx .d{font-size:11.5px;color:var(--ink-soft);margin-top:3px;line-height:1.5}
+.sheet .foot{padding:6px 22px 20px;text-align:center}
+.sheet .foot button{background:none;border:none;color:var(--ink-faint);font-size:12.5px;cursor:pointer;padding:8px}
+.sheet .foot button:hover{color:var(--ink-soft)}
+
+/* charge confirm */
+.chg{padding:22px 24px 8px}
+.chg .row{display:flex;justify-content:space-between;align-items:center;padding:11px 0;font-size:13.5px;border-bottom:1px dashed var(--line)}
+.chg .row:last-child{border-bottom:none}
+.chg .row .k{color:var(--ink-soft)}
+.chg .row .v{font-weight:700;font-variant-numeric:tabular-nums}
+.chg .row.total .v{color:var(--amber-deep);font-size:16px}
+.warn{margin:14px 0 4px;background:var(--danger-wash);border:1px solid rgba(192,88,75,.25);border-radius:12px;padding:11px 13px;font-size:12px;color:#8E3F35;line-height:1.6;display:flex;gap:9px}
+.warn svg{width:15px;height:15px;flex:none;margin-top:2px;stroke:var(--danger);stroke-width:2.3;fill:none;stroke-linecap:round}
+.dobtn{width:100%;border:none;background:var(--ink);color:#fff;font-size:14px;font-weight:700;padding:14px;border-radius:13px;cursor:pointer;margin-top:6px;transition:.16s}
+.dobtn:hover{transform:translateY(-1px)}
+.dobtn:disabled{background:var(--surface-2);color:var(--ink-faint);cursor:default;border:1px solid var(--line);transform:none}
+
+/* redeem */
+.pane{padding:26px 28px 34px;max-width:520px;margin:0 auto}
+.pane h2{font-size:20px;font-weight:700;margin-bottom:6px}
+.pane .sub{font-size:13px;color:var(--ink-soft);line-height:1.65;margin-bottom:20px}
+.codein{display:flex;gap:9px;flex-wrap:wrap}
+.codein input{flex:1;min-width:200px;border:1.5px solid var(--line);border-radius:13px;padding:14px 15px;font-size:15px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:1.5px;text-transform:uppercase;background:var(--surface)}
+.codein input:focus{outline:none;border-color:var(--amber-deep)}
+.codein button{border:none;background:var(--ink);color:#fff;font-size:14px;font-weight:700;padding:0 24px;border-radius:13px;cursor:pointer}
+.msg{margin-top:14px;font-size:13px;padding:12px 14px;border-radius:12px;display:none;line-height:1.6}
+.msg.ok{display:block;background:var(--sage-wash);color:#3E5A4B;border:1px solid rgba(94,122,107,.3)}
+.msg.err{display:block;background:var(--danger-wash);color:#8E3F35;border:1px solid rgba(192,88,75,.25)}
+.hintbox{margin-top:22px;background:var(--surface-2);border:1px solid var(--line);border-radius:14px;padding:16px;font-size:12.5px;color:var(--ink-soft);line-height:1.75}
+.hintbox b{color:var(--ink)}
+.tryc{font-family:ui-monospace,monospace;background:var(--surface);border:1px solid var(--line);padding:2px 7px;border-radius:6px;font-size:12px;color:var(--amber-deep);cursor:pointer}
+
+/* ledger */
+.ledger{padding:22px 26px 30px;max-width:600px;margin:0 auto}
+.lrow{display:flex;align-items:center;gap:13px;padding:13px 0;border-bottom:1px solid var(--line-soft)}
+.lrow:last-child{border-bottom:none}
+.lrow .li{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;flex:none;font-size:15px}
+.lrow .li.plus{background:var(--sage-wash)}
+.lrow .li.minus{background:var(--surface-2)}
+.lrow .lt{flex:1}
+.lrow .lt .t{font-size:13.5px;font-weight:600}
+.lrow .lt .d{font-size:11.5px;color:var(--ink-faint);margin-top:2px}
+.lrow .lv{font-size:14px;font-weight:700;font-variant-numeric:tabular-nums}
+.lrow .lv.plus{color:var(--sage)}
+.lrow .lv.minus{color:var(--ink-soft)}
+.lrow .lb{font-size:11px;color:var(--ink-faint);width:56px;text-align:right;font-variant-numeric:tabular-nums}
+
+/* explain page */
+.ex-hero{text-align:center;padding:42px 24px 22px;background:radial-gradient(700px 300px at 50% 0%,var(--amber-wash),transparent 70%)}
+.ex-hero .eb{font-size:11.5px;font-weight:700;letter-spacing:2px;color:var(--amber-deep);text-transform:uppercase}
+.ex-hero h1{font-family:var(--font-read);font-size:31px;font-weight:700;margin:13px 0 12px;line-height:1.3}
+.ex-hero h1 em{font-style:normal;color:var(--amber-deep)}
+.ex-hero p{font-size:14px;color:var(--ink-soft);max-width:430px;margin:0 auto;line-height:1.7}
+.exwrap{max-width:640px;margin:0 auto;padding:0 24px 40px}
+.exsec{margin-top:30px}
+.exsec .h{font-size:12px;font-weight:700;letter-spacing:1.2px;color:var(--ink-faint);text-transform:uppercase;margin-bottom:13px;text-align:center}
+.ctab{border:1px solid var(--line);border-radius:16px;overflow:hidden;background:var(--surface)}
+.crow{display:grid;grid-template-columns:1.5fr .8fr;align-items:center}
+.crow>div{padding:13px 16px;font-size:13.5px}
+.crow.head>div{background:var(--surface-2);font-weight:700;font-size:12px}
+.crow:not(.head){border-top:1px solid var(--line-soft)}
+.crow .c-lab{color:var(--ink-soft)}
+.crow .c-val{text-align:right;font-weight:700;font-variant-numeric:tabular-nums;color:var(--amber-deep)}
+.crow .c-val.free{color:var(--sage)}
+.anchor{margin-top:14px;background:var(--surface-2);border:1px solid var(--line);border-radius:14px;padding:16px 18px;font-size:13px;color:var(--ink-soft);line-height:1.75}
+.anchor b{color:var(--ink);font-weight:700}
+.packs{display:grid;grid-template-columns:repeat(3,1fr);gap:11px}
+.pack{border:1px solid var(--line);border-radius:16px;padding:18px 14px;background:var(--surface);text-align:center}
+.pack.hero{border:1.5px solid var(--amber-deep);box-shadow:var(--shadow)}
+.pack .p{font-size:22px;font-weight:800;font-variant-numeric:tabular-nums}
+.pack .c{font-size:13px;color:var(--amber-deep);font-weight:700;margin-top:4px}
+.pack .d{font-size:11px;color:var(--ink-faint);margin-top:7px;line-height:1.5}
+.buyflow{margin-top:14px;border:1px solid var(--line);border-radius:16px;padding:18px;background:var(--surface);display:flex;gap:16px;align-items:center;flex-wrap:wrap}
+.qr{width:96px;height:96px;border-radius:12px;background:repeating-conic-gradient(var(--ink) 0% 25%, #fff 0% 50%) 50%/12px 12px;border:5px solid #fff;box-shadow:var(--shadow-sm);flex:none}
+.buyflow .bt{flex:1;min-width:210px;font-size:12.5px;color:var(--ink-soft);line-height:1.8}
+.buyflow .bt b{color:var(--ink)}
+.buyflow .bt ol{margin:8px 0 0 18px}
+
+@media (max-width:600px){
+  .packs{grid-template-columns:1fr}
+  .home,.ledger,.pane{padding-left:18px;padding-right:18px}
+}
+</style>
+</head>
+<body>
+
+<div class="proto-head">
+  <div class="mark">知识<span>宇宙</span> · 纯积分制交互原型 V2</div>
+  <p>单一货币 · 无会员 · 无在线支付 · 充值走激活码</p>
+</div>
+
+<div class="nav" id="nav">
+  <button data-scr="home" class="on">首页与签到</button>
+  <button data-scr="create">建空间(扣费确认)</button>
+  <button data-scr="wall">积分墙</button>
+  <button data-scr="redeem">兑换激活码</button>
+  <button data-scr="ledger">积分流水</button>
+  <button data-scr="explain">积分说明页</button>
+</div>
+<div class="wallet-note">
+  模拟钱包 · 免费额度 <b id="wFree">70</b>/100 · 充值额度 <b id="wPaid">0</b> · 合计 <b id="wAll">70</b>
+  <button id="resetBtn">重置</button>
+</div>
+
+<div class="stage">
+
+<!-- ============ 1 · HOME + CHECKIN ============ -->
+<section class="screen active" id="scr-home">
+  <div class="win">
+    <div class="winbar"><span class="dot"></span><span class="dot"></span><span class="dot"></span>
+      <span class="url">🔒 <b>knowledgeverse.space</b>/home</span></div>
+    <div class="appbar">
+      <div class="brand">知识<span>宇宙</span></div><span class="spacer"></span>
+      <div class="balance" id="balChip"><span class="coin">积</span><span class="n" id="balN">70</span><span class="u">积分</span></div>
+      <div class="avatar">阳</div>
+    </div>
+    <div class="home">
+      <div class="checkin" id="ciBox">
+        <div class="ic"><svg viewBox="0 0 24 24"><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1"/><circle cx="12" cy="12" r="3.2"/></svg></div>
+        <div class="tx"><div class="t" id="ciT">今日签到 +5 积分</div>
+          <div class="d" id="ciD">每天来一次,积分自动到账。免费额度最多存 100。</div></div>
+        <button class="btn-c" id="ciBtn">签到</button>
+      </div>
+
+      <div class="seclabel">我的学习空间</div>
+      <div class="spacegrid">
+        <div class="spacecard"><span class="tag">思辨阅读</span><h3>王阳明心学</h3>
+          <div class="prog">阶段 2 · 62%</div><div class="ptrack"><div class="pfill" style="width:62%"></div></div></div>
+        <button class="newcard" data-go="create">
+          <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+          新建学习空间<span class="px">−50 积分</span></button>
+      </div>
+
+      <div class="seclabel">继续学习 · 王阳明心学</div>
+      <div class="actions">
+        <button class="btn primary" id="genBtn"><svg viewBox="0 0 24 24"><path d="M5 3v4M3 5h4M6 17v4M4 19h4"/><path d="M13 3l2.5 6.5L22 12l-6.5 2.5L13 21l-2.5-6.5L4 12l6.5-2.5z"/></svg>生成下一单元 <span class="cost">−10</span></button>
+        <button class="btn ghost" id="askBtn"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 013.9-2 2.3 2.3 0 01.3 3.4c-.9.9-1.7 1.2-1.7 2.4M12 17h.01"/></svg>划词问 AI <span class="cost">−1</span></button>
+      </div>
+      <div class="hintline">
+        积分只花在三处:<b>建空间 50</b> · <b>生成单元 10</b> · <b>问 AI 1</b>。阅读、提问记录、学习档案都不花积分。
+      </div>
+    </div>
+    <div class="scrim" id="scrimHome"></div>
+  </div>
+  <p style="text-align:center;font-size:11.5px;color:#857F73;margin-top:13px">↑ 点签到、生成、问 AI 亲手消耗;余额不够时会自然撞墙。签到到 100 上限会被拦——也试试。</p>
+</section>
+
+<!-- ============ 2 · CREATE SPACE CHARGE CONFIRM ============ -->
+<section class="screen" id="scr-create">
+  <div class="win">
+    <div class="winbar"><span class="dot"></span><span class="dot"></span><span class="dot"></span>
+      <span class="url">🔒 <b>knowledgeverse.space</b>/space/new</span></div>
+    <div class="appbar">
+      <div class="brand">知识<span>宇宙</span></div><span class="crumb">新建学习空间</span><span class="spacer"></span>
+      <div class="balance"><span class="coin">积</span><span class="n" id="balN2">70</span><span class="u">积分</span></div>
+      <div class="avatar">阳</div>
+    </div>
+    <div class="pane">
+      <h2>你想学点什么?</h2>
+      <p class="sub">接下来 AI 会和你聊几轮,弄清你的起点、目标和节奏,然后为你生成一条专属学习路径。</p>
+      <div class="codein"><input type="text" value="用易经理解决策与不确定性" style="text-transform:none;letter-spacing:0;font-family:var(--font-ui)"></div>
+
+      <div class="chg" style="border:1px solid var(--line);border-radius:16px;margin-top:20px;background:var(--surface-2)">
+        <div class="row"><span class="k">入学访谈(多轮对话)</span><span class="v">含</span></div>
+        <div class="row"><span class="k">「AI 对你的理解」摘要</span><span class="v">含</span></div>
+        <div class="row"><span class="k">生成完整学习路径</span><span class="v">含</span></div>
+        <div class="row total"><span class="k">合计消耗</span><span class="v">−50 积分</span></div>
+        <div class="row"><span class="k">当前余额</span><span class="v" id="chgBal">70</span></div>
+        <div class="row"><span class="k">完成后剩余</span><span class="v" id="chgAfter">20</span></div>
+      </div>
+
+      <div class="warn">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 8v4M12 15.5h.01"/></svg>
+        <span>积分在<b>访谈开始前</b>扣除。中途退出不退还——因为对话已经产生了成本。想清楚要学什么再开始。</span>
+      </div>
+      <button class="dobtn" id="createBtn">确认并开始访谈</button>
+      <div class="hintline" style="text-align:center">你也可以先<b>回首页签到</b>攒够积分再来。</div>
+    </div>
+    <div class="scrim" id="scrimCreate"></div>
+  </div>
+  <p style="text-align:center;font-size:11.5px;color:#857F73;margin-top:13px">最关键的一屏:50 是单次最大扣费,且发生在多轮访谈之前——必须前置讲清,绝不能访谈到一半才提示不够。</p>
+</section>
+
+<!-- ============ 3 · CREDIT WALL ============ -->
+<section class="screen" id="scr-wall">
+  <div class="win">
+    <div class="winbar"><span class="dot"></span><span class="dot"></span><span class="dot"></span>
+      <span class="url">🔒 <b>knowledgeverse.space</b>/space/wang-yangming/unit-9</span></div>
+    <div class="appbar">
+      <div class="brand">知识<span>宇宙</span></div><span class="crumb">王阳明心学</span><span class="spacer"></span>
+      <div class="balance low"><span class="coin">积</span><span class="n">3</span><span class="u">积分</span></div>
+      <div class="avatar">阳</div>
+    </div>
+    <div class="home" style="filter:saturate(.85);min-height:230px">
+      <div class="seclabel">单元 9 · 致良知</div>
+      <h2 style="font-family:var(--font-read);font-size:24px;opacity:.5">未生成</h2>
+    </div>
+    <div class="scrim show">
+      <div class="sheet">
+        <div class="cap">
+          <div class="ic"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 8v4M12 15.5h.01"/></svg></div>
+          <h3>积分不够生成这一单元</h3>
+          <p>生成一个单元需 <b>10 积分</b>,你还剩 <b>3</b>。</p>
+          <span class="keep">✓ 已生成的内容、提问记录照常看,功能没被锁</span>
+        </div>
+        <div class="opts">
+          <button class="opt hero">
+            <div class="oic"><svg viewBox="0 0 24 24"><path d="M20 7L9 18l-5-5"/><path d="M4 7h8"/></svg></div>
+            <div class="otx"><div class="t">兑换激活码</div><div class="d">已经有码?现在输入,积分立即到账</div></div>
+          </button>
+          <button class="opt">
+            <div class="oic"><svg viewBox="0 0 24 24"><path d="M4 5h16v11H7l-3 3z"/><path d="M8 10h8"/></svg></div>
+            <div class="otx"><div class="t">加微信充值</div><div class="d">目前充值由我本人手工处理:说明档位 → 转账 → 发你激活码</div></div>
+          </button>
+          <button class="opt">
+            <div class="oic"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3"/></svg></div>
+            <div class="otx"><div class="t">明天签到 +5</div><div class="d">免费额度每天都会长,不充值也能继续学</div></div>
+          </button>
+        </div>
+        <div class="foot"><button>先去读已有的内容</button></div>
+      </div>
+    </div>
+  </div>
+  <p style="text-align:center;font-size:11.5px;color:#857F73;margin-top:13px">现在只有<b>一种</b>墙(积分不足),三个出口。空间墙已随"空间改为花积分"消失。</p>
+</section>
+
+<!-- ============ 4 · REDEEM ============ -->
+<section class="screen" id="scr-redeem">
+  <div class="win">
+    <div class="winbar"><span class="dot"></span><span class="dot"></span><span class="dot"></span>
+      <span class="url">🔒 <b>knowledgeverse.space</b>/me/redeem</span></div>
+    <div class="appbar"><div class="brand">知识<span>宇宙</span></div><span class="crumb">兑换激活码</span><span class="spacer"></span>
+      <div class="balance"><span class="coin">积</span><span class="n" id="balN3">70</span><span class="u">积分</span></div>
+      <div class="avatar">阳</div></div>
+    <div class="pane">
+      <h2>兑换激活码</h2>
+      <p class="sub">输入你收到的激活码,积分会立刻到账。<b>充值得来的积分永不过期,也不受免费额度上限影响。</b></p>
+      <div class="codein">
+        <input id="codeInput" placeholder="KV-XXXX-XXXX-XXXX" maxlength="19">
+        <button id="redeemBtn">兑换</button>
+      </div>
+      <div class="msg" id="redeemMsg"></div>
+      <div class="hintbox">
+        <b>还没有码?</b><br>
+        加我微信,告诉我要哪个档位(¥9.9 / ¥29.9 / ¥68),转账后我把码发给你。目前是我本人手工处理,通常几小时内。<br><br>
+        <b>原型测试用码:</b> <span class="tryc" data-code="KV-AB7K-9M2P-XQ34">KV-AB7K-9M2P-XQ34</span>(1000 积分)· 点一下自动填入。再兑换一次会提示已使用。
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 5 · LEDGER ============ -->
+<section class="screen" id="scr-ledger">
+  <div class="win">
+    <div class="winbar"><span class="dot"></span><span class="dot"></span><span class="dot"></span>
+      <span class="url">🔒 <b>knowledgeverse.space</b>/me/credits</span></div>
+    <div class="appbar"><div class="brand">知识<span>宇宙</span></div><span class="crumb">积分流水</span><span class="spacer"></span>
+      <div class="balance"><span class="coin">积</span><span class="n" id="balN4">70</span><span class="u">积分</span></div>
+      <div class="avatar">阳</div></div>
+    <div class="ledger">
+      <div class="hd"><h2>积分流水</h2><span class="q">免费额度 <b id="lgFree">70</b>/100 · 充值额度 <b id="lgPaid">0</b></span></div>
+      <div id="lgList"></div>
+      <div class="hintbox" style="margin-top:20px">
+        消耗时<b>先扣免费额度、后扣充值额度</b> —— 你花钱买的积分永远最后被动用,而且不会过期。
+      </div>
+    </div>
+  </div>
+  <p style="text-align:center;font-size:11.5px;color:#857F73;margin-top:13px">积分制产品最大的信任风险是"我的积分怎么少了"。一张流水表能消掉绝大部分找你问的消息。</p>
+</section>
+
+<!-- ============ 6 · EXPLAIN (replaces pricing page) ============ -->
+<section class="screen" id="scr-explain">
+  <div class="win">
+    <div class="winbar"><span class="dot"></span><span class="dot"></span><span class="dot"></span>
+      <span class="url">🔒 <b>knowledgeverse.space</b>/credits</span></div>
+    <div class="ex-hero">
+      <div class="eb">积分说明</div>
+      <h1>功能全部开放。<br>只有<em>学多少</em>的区别。</h1>
+      <p>划词问 AI、个性化生成、导入建课——所有能力对每个人一样。积分决定的只是你学的量。</p>
+    </div>
+    <div class="exwrap">
+      <div class="exsec">
+        <div class="h">积分花在哪</div>
+        <div class="ctab">
+          <div class="crow head"><div>动作</div><div style="text-align:right">积分</div></div>
+          <div class="crow"><div class="c-lab">新建一个学习空间(访谈 + 路径)</div><div class="c-val">50</div></div>
+          <div class="crow"><div class="c-lab">生成一个学习单元</div><div class="c-val">10</div></div>
+          <div class="crow"><div class="c-lab">划词问 AI 一次</div><div class="c-val">1</div></div>
+          <div class="crow"><div class="c-lab">阅读 · 提问记录 · 学习档案</div><div class="c-val free">免费</div></div>
+        </div>
+        <div class="anchor">
+          <b>一个学习目标从头走完,大约 340 积分。</b><br>
+          = 建空间 50 + 约 24 个单元 240 + 几十次追问 50。心里有这个数,就知道该充多少。
+        </div>
+      </div>
+
+      <div class="exsec">
+        <div class="h">积分从哪来</div>
+        <div class="ctab">
+          <div class="crow head"><div>来源</div><div style="text-align:right">积分</div></div>
+          <div class="crow"><div class="c-lab">注册就送(一次性)</div><div class="c-val free">150</div></div>
+          <div class="crow"><div class="c-lab">每天签到</div><div class="c-val free">+5</div></div>
+          <div class="crow"><div class="c-lab">邀请一位朋友(双方各得)</div><div class="c-val free">+50</div></div>
+          <div class="crow"><div class="c-lab">充值(激活码)</div><div class="c-val">300 起</div></div>
+        </div>
+        <div class="anchor">
+          免费积分<b>不会过期,也不会被清零</b>,只是最多存到 100 —— 存满了就先花掉一些再继续签到。<br>
+          <b>充值的积分没有上限,永不过期。</b>
+        </div>
+      </div>
+
+      <div class="exsec">
+        <div class="h">充值档位</div>
+        <div class="packs">
+          <div class="pack"><div class="p">¥9.9</div><div class="c">300 积分</div><div class="d">约一个学习目标的大半</div></div>
+          <div class="pack hero"><div class="p">¥29.9</div><div class="c">1000 积分</div><div class="d">约三个学习目标</div></div>
+          <div class="pack"><div class="p">¥68</div><div class="c">2500 积分</div><div class="d">约七个学习目标</div></div>
+        </div>
+        <div class="buyflow">
+          <div class="qr"></div>
+          <div class="bt">
+            <b>怎么充值</b>
+            <ol><li>扫码加我微信,说要哪个档位</li><li>转账</li><li>我把激活码发给你</li><li>在「我的 → 兑换激活码」输入,立即到账</li></ol>
+            目前是我本人手工处理,通常几小时内。这是个小团队做的产品,谢谢你的耐心。
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <p style="text-align:center;font-size:11.5px;color:#857F73;margin-top:13px">这一页替代原来的「定价页」。把"一个目标 ≈ 340 积分"公开,用户才知道该充哪档——透明本身就是转化。</p>
+</section>
+
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+  const CAP=100, COST={space:50,unit:10,ask:1}, CHECKIN=5;
+  const INIT={free:70,paid:0,checked:false,codeUsed:false};
+  let S={...INIT}, ledger=[];
+
+  const $=id=>document.getElementById(id);
+  const screens={home:'scr-home',create:'scr-create',wall:'scr-wall',redeem:'scr-redeem',ledger:'scr-ledger',explain:'scr-explain'};
+  let cur='home';
+
+  function baseLedger(){
+    return [
+      {r:'注册赠送',d:'新手包 · 永久额度',v:150,b:150},
+      {r:'新建学习空间',d:'王阳明心学',v:-50,b:100},
+      {r:'生成学习单元',d:'单元 1–3',v:-30,b:70},
+      {r:'每日签到',d:'昨天',v:5,b:75},
+      {r:'划词问 AI',d:'5 次',v:-5,b:70},
+    ];
+  }
+  function resetAll(){ S={...INIT}; ledger=baseLedger(); render(); }
+
+  function show(scr){
+    cur=scr;
+    Object.values(screens).forEach(id=>$(id).classList.remove('active'));
+    $(screens[scr]).classList.add('active');
+    document.querySelectorAll('#nav button').forEach(b=>b.classList.toggle('on',b.dataset.scr===scr));
+    window.scrollTo({top:0});
+  }
+  $('nav').addEventListener('click',e=>{const b=e.target.closest('button');if(b)show(b.dataset.scr);});
+  document.querySelectorAll('[data-go]').forEach(el=>el.addEventListener('click',()=>show(el.dataset.go)));
+  $('resetBtn').addEventListener('click',()=>{resetAll();toast('已重置为初始状态');});
+
+  function total(){return S.free+S.paid;}
+  function toast(html){const t=$('toast');t.innerHTML=html;t.classList.add('show');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),1900);}
+
+  function render(){
+    const t=total();
+    $('wFree').textContent=S.free; $('wPaid').textContent=S.paid; $('wAll').textContent=t;
+    ['balN','balN2','balN3','balN4'].forEach(id=>{const el=$(id);if(el)el.textContent=t;});
+    $('balChip').classList.toggle('low',t<10);
+    $('chgBal').textContent=t; $('chgAfter').textContent=Math.max(0,t-COST.space);
+    $('createBtn').disabled = t<COST.space;
+    $('createBtn').textContent = t<COST.space ? `积分不足(还差 ${COST.space-t})` : '确认并开始访谈';
+    $('lgFree').textContent=S.free; $('lgPaid').textContent=S.paid;
+
+    // checkin box
+    const box=$('ciBox'), btn=$('ciBtn');
+    if(S.checked){ btn.disabled=true; btn.textContent='今天已签'; box.classList.remove('capped');
+      $('ciT').textContent='今天已签到'; $('ciD').textContent='明天再来 +5。免费积分不会过期,放心攒。'; }
+    else if(S.free>=CAP){ btn.disabled=false; btn.textContent='签到'; box.classList.add('capped');
+      $('ciT').textContent='免费额度已满'; $('ciD').textContent=`免费额度最多存 ${CAP},先用掉一些再来签到。充值额度不受影响。`; }
+    else { btn.disabled=false; btn.textContent='签到'; box.classList.remove('capped');
+      $('ciT').textContent=`今日签到 +${CHECKIN} 积分`; $('ciD').textContent=`每天来一次,积分自动到账。免费额度最多存 ${CAP}。`; }
+
+    // ledger list
+    $('lgList').innerHTML = ledger.slice().reverse().map(x=>`
+      <div class="lrow">
+        <div class="li ${x.v>0?'plus':'minus'}">${x.v>0?'↑':'↓'}</div>
+        <div class="lt"><div class="t">${x.r}</div><div class="d">${x.d}</div></div>
+        <div class="lv ${x.v>0?'plus':'minus'}">${x.v>0?'+':''}${x.v}</div>
+        <div class="lb">余 ${x.b}</div>
+      </div>`).join('');
+  }
+
+  function addLedger(r,d,v){ ledger.push({r,d,v,b:total()}); }
+
+  function spend(cost,label,desc){
+    if(total()<cost){ openWall(cost); return false; }
+    const fromFree=Math.min(S.free,cost); S.free-=fromFree; S.paid-=(cost-fromFree);
+    addLedger(label,desc,-cost); render();
+    toast(`${label} · <b>−${cost}</b> · 余 ${total()}`);
+    return true;
+  }
+
+  $('ciBtn').addEventListener('click',()=>{
+    if(S.free>=CAP){ S.checked=true; addLedger('每日签到','免费额度已满,发放 0',0); render();
+      toast('已签到,但<b>免费额度已满</b>,本次发放 0'); return; }
+    S.free+=CHECKIN; S.checked=true; addLedger('每日签到','今天',CHECKIN); render();
+    toast(`签到成功 <b>+${CHECKIN}</b> · 余 ${total()}`);
+  });
+  $('genBtn').addEventListener('click',()=>spend(COST.unit,'生成学习单元','王阳明心学'));
+  $('askBtn').addEventListener('click',()=>spend(COST.ask,'划词问 AI','王阳明心学'));
+  $('createBtn').addEventListener('click',()=>{
+    if(spend(COST.space,'新建学习空间','易经与决策')) { toast('空间已建,进入访谈…'); setTimeout(()=>show('home'),900); }
+  });
+
+  function openWall(cost){
+    const sc = cur==='create' ? $('scrimCreate') : $('scrimHome');
+    sc.innerHTML=`<div class="sheet">
+      <div class="cap">
+        <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="var(--amber-deep)" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="8"/><path d="M12 8v4M12 15.5h.01"/></svg></div>
+        <h3>积分不够${cost===50?'新建空间':cost===10?'生成这一单元':'问这一次'}</h3>
+        <p>这次需要 <b>${cost} 积分</b>,你还剩 <b>${total()}</b>。</p>
+        <span class="keep">✓ 已生成的内容照常看,功能没被锁</span>
+      </div>
+      <div class="opts">
+        <button class="opt hero" data-act="redeem"><div class="oic"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round"><path d="M20 7L9 18l-5-5"/></svg></div>
+          <div class="otx"><div class="t">兑换激活码</div><div class="d">已经有码?现在输入,立即到账</div></div></button>
+        <button class="opt" data-act="explain"><div class="oic"><svg viewBox="0 0 24 24" fill="none" stroke="var(--ink-soft)" stroke-width="2.2" stroke-linecap="round"><path d="M4 5h16v11H7l-3 3z"/></svg></div>
+          <div class="otx"><div class="t">加微信充值</div><div class="d">说明档位 → 转账 → 我发你激活码</div></div></button>
+        <button class="opt" data-act="close"><div class="oic"><svg viewBox="0 0 24 24" fill="none" stroke="var(--ink-soft)" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="3.2"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3"/></svg></div>
+          <div class="otx"><div class="t">明天签到 +5</div><div class="d">不充值也能继续学,只是慢一点</div></div></button>
+      </div>
+      <div class="foot"><button data-act="close">先去读已有的内容</button></div></div>`;
+    sc.classList.add('show');
+    sc.querySelectorAll('[data-act]').forEach(b=>b.addEventListener('click',()=>{
+      const a=b.dataset.act; sc.classList.remove('show');
+      if(a==='redeem') show('redeem'); if(a==='explain') show('explain');
+    }));
+    sc.addEventListener('click',ev=>{if(ev.target===sc)sc.classList.remove('show');});
+  }
+
+  // redeem
+  document.querySelectorAll('.tryc').forEach(el=>el.addEventListener('click',()=>{$('codeInput').value=el.dataset.code;}));
+  $('redeemBtn').addEventListener('click',()=>{
+    const v=$('codeInput').value.trim().toUpperCase(), m=$('redeemMsg');
+    m.className='msg';
+    if(v==='KV-AB7K-9M2P-XQ34'){
+      if(S.codeUsed){ m.className='msg err'; m.textContent='激活码无效或已被使用。'; return; }
+      S.codeUsed=true; S.paid+=1000; addLedger('兑换激活码','充值额度 · 永不过期',1000); render();
+      m.className='msg ok'; m.innerHTML='<b>+1000 积分已到账</b> —— 进入充值额度,不受上限约束,永不过期。';
+      $('codeInput').value='';
+    } else {
+      m.className='msg err';
+      m.textContent='激活码无效或已被使用。';   // 故意不区分,防止被用来探测码是否存在
+    }
+  });
+
+  resetAll();
+  show('home');
+})();
+</script>
+</body>
+</html>

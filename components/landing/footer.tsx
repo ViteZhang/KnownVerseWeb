@@ -18,7 +18,7 @@ export function LandingFooter() {
             {/* 绝对路径:页脚在定价/法务页复用时,页内锚点用 /#... 才能跳回落地页对应分区。 */}
             <a href="/#how">它怎么运作</a>
             <a href="/#cases">学什么</a>
-            <Link href="/pricing">定价</Link>
+            <Link href="/credits">积分说明</Link>
           </div>
           <div className="foot-col">
             <div className="h">资源</div>

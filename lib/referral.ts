@@ -70,6 +70,7 @@ export type ApplyReferralReason =
 export type ApplyReferralResult = {
   applied: boolean;
   reason?: ApplyReferralReason;
+  credits?: number; // 纯积分制:双边各得的积分(apply_referral 返回)
 };
 
 /** 应用邀请码。服务端做全部校验与写入；客户端只传码。 */
@@ -118,7 +119,7 @@ export function applyResultMessage(res: ApplyReferralResult): {
   text: string;
 } {
   if (res.applied) {
-    return { ok: true, text: '已为你和邀请人各解锁 1 个学习空间' };
+    return { ok: true, text: `已为你和邀请人各 +${res.credits ?? 50} 积分` };
   }
   switch (res.reason) {
     case 'already_referred':

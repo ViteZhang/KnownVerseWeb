@@ -11,6 +11,8 @@ import {
   summarizeUnderstanding,
   type InterviewTurn,
 } from '@/lib/ai';
+import { BILLING_FALLBACK, getBillingConfigPublic } from '@/lib/billing';
+import { spendSpaceCreation } from '@/lib/credits';
 import { createSpace, persistPath } from '@/lib/spaces';
 
 // 学习类型 → 友好中文（值与 spaces.learning_type 一致）。
@@ -49,7 +51,21 @@ const splitList = (s: string) =>
 
 export default function NewSpacePage() {
   const router = useRouter();
-  const { openSpaceWall } = usePaywall();
+  const { credits, openCreditWall, refreshCredits } = usePaywall();
+
+  // 建空间成本 + 余额(《终版》§5.3、§8②):访谈开始前扣费,须前置讲清、余额不足直接拦。
+  const [cost, setCost] = useState(BILLING_FALLBACK.cost_space_creation);
+  useEffect(() => {
+    getBillingConfigPublic().then((c) => setCost(c.cost_space_creation));
+  }, []);
+  // 一次性 idem:整个建空间草稿共用,重试/放弃后重来同键不重扣(§5.3)。
+  const draftIdem = useRef<string>(
+    typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}`,
+  );
+  const [charging, setCharging] = useState(false);
+
+  const balance = credits?.balance ?? 0;
+  const insufficient = credits != null && balance < cost;
 
   const [step, setStep] = useState<Step>('input');
   const [initialInput, setInitialInput] = useState('');
@@ -141,9 +157,23 @@ export default function NewSpacePage() {
     [doSummarize],
   );
 
-  const startInterview = () => {
+  // 确认并开始访谈:先在服务端扣 50(§5.3),成功才进访谈;不足弹积分墙。
+  const startInterview = async () => {
     const input = initialInput.trim();
-    if (!input) return;
+    if (!input || charging) return;
+    setError(null);
+    setCharging(true);
+    const paid = await spendSpaceCreation(draftIdem.current);
+    setCharging(false);
+    if (!paid.ok) {
+      if (paid.reason === 'insufficient_credits') {
+        openCreditWall({ balance: paid.balance ?? balance, needed: cost });
+      } else {
+        setError('扣费失败,请稍后再试。');
+      }
+      return;
+    }
+    refreshCredits(); // 扣费成功 → 刷新余额芯片
     setStep('interview');
     void runTurn(input, []);
     scrollToEnd();
@@ -184,8 +214,12 @@ export default function NewSpacePage() {
       staticProfile,
     });
     if (created.error || !created.spaceId) {
-      if (created.limitReached) openSpaceWall(); // 撞空间上限 → 弹空间墙
-      setError(created.error ?? '创建空间失败。');
+      // 空间硬上限(space_hard_cap,纯防滥用)极少撞到;撞到就直接给文案,不再弹空间墙。
+      setError(
+        created.limitReached
+          ? '已达学习空间数量上限(防滥用)。可先归档一个旧空间再来。'
+          : created.error ?? '创建空间失败。',
+      );
       return;
     }
 
@@ -235,19 +269,6 @@ export default function NewSpacePage() {
               onChange={(e) => setInitialInput(e.target.value)}
               placeholder="例如：我想学摄影，能拍好旅行时的风景和人像。有一台微单但一直用自动挡……"
             />
-            <div className="ns-foot">
-              <span className="ns-hint">AI 会先和你聊几句，补全它需要了解的信息</span>
-              <button
-                className="primary"
-                disabled={!initialInput.trim()}
-                onClick={startInterview}
-              >
-                <svg viewBox="0 0 24 24">
-                  <path d="M5 12h14M13 6l6 6-6 6" />
-                </svg>
-                开始
-              </button>
-            </div>
           </div>
           <div className="ns-examples">
             {EXAMPLES.map((ex) => (
@@ -260,6 +281,68 @@ export default function NewSpacePage() {
               </span>
             ))}
           </div>
+
+          {/* 扣费确认卡(§8②):访谈开始前扣费,必须前置讲清、余额不足不允许进入。 */}
+          <div className="chg-card">
+            <div className="chg-row">
+              <span className="k">入学访谈(多轮对话)</span>
+              <span className="v">含</span>
+            </div>
+            <div className="chg-row">
+              <span className="k">「AI 对你的理解」摘要</span>
+              <span className="v">含</span>
+            </div>
+            <div className="chg-row">
+              <span className="k">生成完整学习路径</span>
+              <span className="v">含</span>
+            </div>
+            <div className="chg-row total">
+              <span className="k">合计消耗</span>
+              <span className="v">−{cost} 积分</span>
+            </div>
+            <div className="chg-row">
+              <span className="k">当前余额</span>
+              <span className="v">{balance}</span>
+            </div>
+            <div className="chg-row">
+              <span className="k">完成后剩余</span>
+              <span className="v">{Math.max(0, balance - cost)}</span>
+            </div>
+          </div>
+          <div className="chg-warn">
+            <svg viewBox="0 0 24 24">
+              <circle cx="12" cy="12" r="9" />
+              <path d="M12 8v4M12 15.5h.01" />
+            </svg>
+            <span>
+              积分在<b>访谈开始前</b>扣除。中途退出不退还——因为对话已经产生了成本。想清楚要学什么再开始。
+            </span>
+          </div>
+          <button
+            className="primary ns-confirm"
+            disabled={!initialInput.trim() || charging || insufficient}
+            onClick={startInterview}
+          >
+            {insufficient ? (
+              `积分不足(还差 ${cost - balance})`
+            ) : (
+              <>
+                <svg viewBox="0 0 24 24">
+                  <path d="M5 12h14M13 6l6 6-6 6" />
+                </svg>
+                {charging ? '扣费中…' : '确认并开始访谈'}
+              </>
+            )}
+          </button>
+          {insufficient && (
+            <div className="ns-outlet">
+              余额不够?回首页<b>签到 +{credits?.checkinCredits ?? 5}</b>,或去
+              <button className="linklike" onClick={() => router.push('/app/redeem')}>
+                兑换激活码
+              </button>
+              。
+            </div>
+          )}
         </div>
       )}
 

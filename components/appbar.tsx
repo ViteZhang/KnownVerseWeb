@@ -6,7 +6,6 @@ import { useEffect, useRef, useState } from 'react';
 import { getSupabase } from '@/lib/supabase/client';
 import { signOut } from '@/lib/auth';
 import { CreditBar } from '@/components/paywall/credit-bar';
-import { usePaywall } from '@/components/paywall/paywall-provider';
 
 type NavKey = 'home' | 'path' | 'qlog';
 
@@ -35,35 +34,9 @@ export function Appbar({
   spaceId?: string;
 }) {
   const router = useRouter();
-  const { credits } = usePaywall();
   const [initial, setInitial] = useState('·');
   const [menuOpen, setMenuOpen] = useState(false);
   const wrapRef = useRef<HTMLDivElement>(null);
-
-  // 有订阅记录(会员/宽限/已取消未到期)才显示「订阅管理」入口。
-  const hasSub =
-    credits != null && ['active', 'past_due', 'canceled'].includes(credits.status);
-
-  const openPortal = async () => {
-    setMenuOpen(false);
-    try {
-      const r = await fetch('/api/portal', { method: 'POST' });
-      const b = await r.json().catch(() => ({}));
-      if (r.ok && b.url) {
-        window.location.href = b.url;
-      } else {
-        alert(
-          b.error === 'portal_unconfigured'
-            ? '订阅管理暂未开放。'
-            : b.error === 'no_customer'
-              ? '未找到你的订阅记录。'
-              : '打开订阅管理失败，请稍后再试。',
-        );
-      }
-    } catch {
-      alert('打开订阅管理失败，请稍后再试。');
-    }
-  };
 
   useEffect(() => {
     getSupabase()
@@ -171,7 +144,7 @@ export function Appbar({
               阅读偏好
             </Link>
             <Link
-              href="/app/invite"
+              href="/app/redeem"
               onClick={() => setMenuOpen(false)}
               style={{
                 ...menuItemStyle,
@@ -180,13 +153,22 @@ export function Appbar({
                 whiteSpace: 'nowrap',
               }}
             >
+              兑换激活码
+            </Link>
+            <Link
+              href="/app/ledger"
+              onClick={() => setMenuOpen(false)}
+              style={menuItemStyle}
+            >
+              积分流水
+            </Link>
+            <Link
+              href="/app/invite"
+              onClick={() => setMenuOpen(false)}
+              style={menuItemStyle}
+            >
               我的邀请码
             </Link>
-            {hasSub && (
-              <button onClick={openPortal} style={menuItemStyle}>
-                订阅管理
-              </button>
-            )}
             <div
               style={{
                 height: 1,

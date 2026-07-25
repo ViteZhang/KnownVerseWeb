@@ -3,6 +3,8 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 
 import { Appbar } from '@/components/appbar';
+import { Checkin } from '@/components/paywall/checkin';
+import { usePaywall } from '@/components/paywall/paywall-provider';
 import { typeTag } from '@/lib/learning-type';
 import { applyPendingReferral } from '@/lib/referral';
 import { fetchSpacesOverview } from '@/lib/spaces';
@@ -18,6 +20,7 @@ function greeting(): string {
 }
 
 export default function HomePage() {
+  const { refreshCredits } = usePaywall();
   const [loading, setLoading] = useState(true);
   const [spaces, setSpaces] = useState<SpaceCard[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -35,14 +38,16 @@ export default function HomePage() {
       setError(r.error);
       setLoading(false);
       if (applied?.applied) {
-        setToast('已为你和邀请人各解锁 1 个学习空间');
+        // 纯积分制:邀请奖励改为送积分,提示到账并刷新余额条。
+        refreshCredits();
+        setToast(`已为你和邀请人各 +${applied.credits ?? 50} 积分`);
         setTimeout(() => alive && setToast(null), 3000);
       }
     })();
     return () => {
       alive = false;
     };
-  }, []);
+  }, [refreshCredits]);
 
   return (
     <div className="app">
@@ -59,6 +64,9 @@ export default function HomePage() {
             </small>
           </div>
         </div>
+
+        <Checkin />
+
         <div className="section-label">学习空间</div>
 
         {loading ? (
@@ -111,8 +119,14 @@ export default function HomePage() {
             <Link href="/app/new" className="newspace" style={{ cursor: 'pointer' }}>
               <div className="plus">＋</div>
               <div>新建学习空间</div>
-              <small>在电脑上完成入学访谈</small>
+              <span className="ns-cost">−50 积分</span>
             </Link>
+          </div>
+        )}
+
+        {!loading && !error && (
+          <div className="home-hint">
+            积分只花在三处:<b>建空间 50</b> · <b>生成单元 10</b> · <b>问 AI 1</b>。阅读、提问记录、学习档案都不花积分。
           </div>
         )}
       </div>
