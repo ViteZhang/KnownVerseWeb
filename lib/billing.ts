@@ -1,46 +1,42 @@
-// 商业化 Phase 3:所有「数字」的前端读取口(《Phase3》§2)。
-// 只从 billing_config_public 视图取(积分单价 / 发放量 / price id / 包大小),永不写死这些数字。
-// 用无 Cookie 的匿名客户端读,好让定价页保持 SSG/ISR(不被会话 Cookie 拖成动态渲染)。
+// 纯积分制:所有「数字」的前端读取口(《终版》§2)。
+// 只从 billing_config_public 视图取(新手包 / 签到 / 上限 / 各动作成本),永不写死这些数字。
+// 用无 Cookie 的匿名客户端读,好让积分说明页保持 SSG/ISR(不被会话 Cookie 拖成动态渲染)。
 import { createClient } from '@supabase/supabase-js';
 
 export type BillingConfig = {
-  free_monthly_credits: number;
-  member_monthly_credits: number;
+  welcome_credits: number;
+  daily_checkin_credits: number;
+  free_balance_cap: number;
+  referral_credits: number;
+  cost_space_creation: number;
   cost_unit_generation: number;
   cost_ask_ai: number;
-  member_space_cap: number;
-  price_pro_yearly: string | null;
-  price_pro_monthly: string | null;
-  price_credit_pack: string | null;
-  price_space_pack: string | null;
-  credit_pack_amount: number;
-  space_pack_amount: number;
+  space_hard_cap: number;
 };
 
-// 兜底:视图读不到时用锁定默认值(与 billing_config 表默认一致),定价页永不空白。
+// 兜底:视图读不到时用锁定默认值(与 billing_config 表默认一致),页面永不空白。
 export const BILLING_FALLBACK: BillingConfig = {
-  free_monthly_credits: 80,
-  member_monthly_credits: 800,
+  welcome_credits: 150,
+  daily_checkin_credits: 5,
+  free_balance_cap: 100,
+  referral_credits: 50,
+  cost_space_creation: 50,
   cost_unit_generation: 10,
   cost_ask_ai: 1,
-  member_space_cap: 50,
-  price_pro_yearly: null,
-  price_pro_monthly: null,
-  price_credit_pack: null,
-  price_space_pack: null,
-  credit_pack_amount: 300,
-  space_pack_amount: 5,
+  space_hard_cap: 50,
 };
 
-// 展示用美元基准价:Paddle 结算时按地区自动本地化,这里只是营销页示意,非扣款依据。
-// (《原型 V1》定价页数字;单次成本标定后若调价,真实价格以 Paddle 后台为准。)
-export const DISPLAY_PRICES = {
-  proYearly: '$69.99',
-  proYearlyPerMonth: '$5.83',
-  proMonthly: '$8.99',
-  creditPack: '$4.99',
-  spacePack: '$6.99',
-} as const;
+// 充值档位:线下微信报价单(《终版》§0、§8⑥)。系统里只有「激活码面额」,
+// 这三档只是营销展示与对账口径,不是 SKU、不进 billing_config。标定前不对外调整。
+export type CreditPack = { price: string; credits: number; note: string; hero?: boolean };
+export const CREDIT_PACKS: CreditPack[] = [
+  { price: '¥9.9', credits: 300, note: '约一个学习目标的大半' },
+  { price: '¥29.9', credits: 1000, note: '约三个学习目标', hero: true },
+  { price: '¥68', credits: 2500, note: '约七个学习目标' },
+];
+
+// 一个学习目标从头走完的锚点(《终版》§8⑥):建空间 50 + 约 24 单元 240 + 追问 50 ≈ 340。
+export const GOAL_CREDIT_ANCHOR = 340;
 
 export async function getBillingConfigPublic(): Promise<BillingConfig> {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -48,23 +44,10 @@ export async function getBillingConfigPublic(): Promise<BillingConfig> {
   if (!url || !anon) return BILLING_FALLBACK;
   try {
     const sb = createClient(url, anon, { auth: { persistSession: false } });
+    // 视图为「新旧超集」(Paddle 休眠期兼容),只取本类型声明的字段,多余键无害。
     const { data } = await sb.from('billing_config_public').select('*').single();
     return { ...BILLING_FALLBACK, ...(data ?? {}) };
   } catch {
     return BILLING_FALLBACK;
   }
-}
-
-// 整页要本地化预览的全部 price id(一次批量拉取,plans/addons 共用缓存)。
-// 放在这个非 'use client' 模块,server 与 client 都能安全 import + 调用。
-export function allBillingPriceIds(cfg: BillingConfig): (string | null)[] {
-  return [cfg.price_pro_yearly, cfg.price_pro_monthly, cfg.price_credit_pack, cfg.price_space_pack];
-}
-
-// 约算:80 积分 ≈ 6 次单元 + 30 次问 AI(示意)。单元 10 / 问 AI 1。
-export function estimateUnits(credits: number, cfg: BillingConfig): number {
-  return Math.floor((credits * 0.75) / cfg.cost_unit_generation);
-}
-export function estimateAsks(credits: number, cfg: BillingConfig): number {
-  return Math.round((credits * 0.25) / cfg.cost_ask_ai);
 }

@@ -12,7 +12,7 @@ export function SiteNav() {
           知识<span>宇宙</span>
         </Link>
         <div className="navlinks">
-          <Link href="/pricing">定价</Link>
+          <Link href="/credits">积分说明</Link>
           <Link href="/blog">博客</Link>
           <StartCta className="navcta btn btn-primary">免费开始</StartCta>
         </div>

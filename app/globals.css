@@ -827,7 +827,118 @@ a{color:inherit;text-decoration:none}
 .pw-foot button{background:none;border:none;color:var(--ink-faint);font-size:12.5px;cursor:pointer;padding:8px}
 .pw-foot button:hover{color:var(--ink-soft)}
 
-/* ---- past_due 催缴提示条(Phase 3 §6.6)---- */
-.pw-dunning{display:flex;align-items:center;justify-content:center;gap:14px;flex-wrap:wrap;padding:10px 18px;background:var(--danger-wash,rgba(192,88,75,.12));border-bottom:1px solid rgba(192,88,75,.28);font-size:13px;color:var(--danger)}
-.pw-dunning button{background:var(--danger);color:#fff;border:none;border-radius:9px;padding:7px 14px;font-size:12.5px;font-weight:600;cursor:pointer;font-family:inherit}
-.pw-dunning button:hover{opacity:.92}
+/* ═══════════════════════════════════════════════════════════════════
+   纯积分制 UI(《终版》§8):余额芯片 / 签到 / 兑换 / 流水 / 说明页 / 扣费确认
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* 余额芯片(§8①):总积分,低于 10 变暖红。点击进流水。 */
+.credit-chip{display:inline-flex;align-items:center;gap:7px;padding:7px 12px;background:var(--surface-2);border:1px solid var(--line);border-radius:999px;text-decoration:none;color:inherit;transition:.15s;white-space:nowrap}
+.credit-chip:hover{border-color:var(--amber-line);background:var(--amber-wash)}
+.credit-chip .cc-coin{width:20px;height:20px;border-radius:50%;background:var(--amber-wash);border:1px solid var(--amber-line);display:grid;place-items:center;font-size:10px;font-weight:800;color:var(--amber-deep);flex:none}
+.credit-chip .cc-n{font-size:14px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--ink)}
+.credit-chip .cc-u{font-size:11px;color:var(--ink-faint)}
+.credit-chip.low .cc-n{color:var(--danger)}
+
+/* 签到组件三态(§8①) */
+.checkin{display:flex;align-items:center;gap:12px;padding:13px 16px;border:1px solid var(--line);border-radius:14px;background:linear-gradient(180deg,var(--amber-wash),transparent);margin-bottom:22px}
+.checkin.capped{background:var(--surface-2)}
+.checkin .ci-ic{width:38px;height:38px;border-radius:12px;background:var(--surface);border:1px solid var(--amber-line);display:grid;place-items:center;flex:none}
+.checkin .ci-ic svg{width:19px;height:19px;stroke:var(--amber-deep);stroke-width:2.2;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.checkin.capped .ci-ic{border-color:var(--line)}
+.checkin.capped .ci-ic svg{stroke:var(--ink-faint)}
+.checkin .ci-tx{flex:1;min-width:150px}
+.checkin .ci-tx .t{font-size:14px;font-weight:700;color:var(--ink)}
+.checkin .ci-tx .d{font-size:11.5px;color:var(--ink-soft);margin-top:3px;line-height:1.5}
+.checkin .ci-btn{border:none;background:var(--ink);color:#fff;font-size:13px;font-weight:700;padding:10px 18px;border-radius:11px;cursor:pointer;flex:none;transition:.16s;font-family:inherit}
+.checkin .ci-btn:hover:not(:disabled){transform:translateY(-1px)}
+.checkin .ci-btn:disabled{background:var(--surface-2);color:var(--ink-faint);cursor:default;border:1px solid var(--line)}
+
+/* 首页成本说明 + 新建卡的 −50 标 */
+.home-hint{font-size:12px;color:var(--ink-faint);margin-top:20px;line-height:1.7}
+.home-hint b{color:var(--ink-soft)}
+.newspace .ns-cost{font-size:11px;font-weight:700;color:var(--amber-deep);background:var(--amber-wash);padding:2px 9px;border-radius:999px;margin-top:2px}
+
+/* 通用面板(兑换页等) */
+.pane{max-width:520px;margin:0 auto;padding:26px 28px 40px}
+.pane h2{font-size:20px;font-weight:700;margin-bottom:6px}
+.pane .sub{font-size:13px;color:var(--ink-soft);line-height:1.65;margin-bottom:20px}
+.pane .sub b{color:var(--ink)}
+.codein{display:flex;gap:9px;flex-wrap:wrap}
+.codein input{flex:1;min-width:200px;border:1.5px solid var(--line);border-radius:13px;padding:14px 15px;font-size:15px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:1.5px;text-transform:uppercase;background:var(--surface);color:var(--ink)}
+.codein input:focus{outline:none;border-color:var(--amber-deep)}
+.codein button{border:none;background:var(--ink);color:#fff;font-size:14px;font-weight:700;padding:0 24px;border-radius:13px;cursor:pointer;font-family:inherit}
+.codein button:disabled{background:var(--surface-2);color:var(--ink-faint);cursor:default}
+.redeem-msg{margin-top:14px;font-size:13px;padding:12px 14px;border-radius:12px;line-height:1.6}
+.redeem-msg.ok{background:var(--sage-wash);color:#3E5A4B;border:1px solid rgba(94,122,107,.3)}
+.redeem-msg.err{background:var(--danger-wash,rgba(192,88,75,.12));color:#8E3F35;border:1px solid rgba(192,88,75,.25)}
+.hintbox{margin-top:22px;background:var(--surface-2);border:1px solid var(--line);border-radius:14px;padding:16px;font-size:12.5px;color:var(--ink-soft);line-height:1.75}
+.hintbox b{color:var(--ink)}
+.hintbox a{color:var(--amber-deep)}
+
+/* 积分流水页(§8⑤) */
+.ledger{max-width:600px;margin:0 auto;padding:22px 26px 40px}
+.ledger .lg-hd{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+.ledger .lg-hd h2{font-size:20px;font-weight:700}
+.ledger .lg-sum{font-size:12px;color:var(--ink-faint)}
+.ledger .lg-sum b{color:var(--amber-deep);font-variant-numeric:tabular-nums}
+.lg-row{display:flex;align-items:center;gap:13px;padding:13px 0;border-bottom:1px solid var(--line-soft)}
+.lg-row:last-child{border-bottom:none}
+.lg-row .lg-i{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;flex:none;font-size:15px}
+.lg-row .lg-i.plus{background:var(--sage-wash);color:var(--sage)}
+.lg-row .lg-i.minus{background:var(--surface-2);color:var(--ink-soft)}
+.lg-row .lg-t{flex:1;min-width:0}
+.lg-row .lg-t .t{font-size:13.5px;font-weight:600;color:var(--ink)}
+.lg-row .lg-t .d{font-size:11px;color:var(--ink-faint);margin-top:2px}
+.lg-row .lg-v{font-size:14px;font-weight:700;font-variant-numeric:tabular-nums}
+.lg-row .lg-v.plus{color:var(--sage)}
+.lg-row .lg-v.minus{color:var(--ink-soft)}
+.lg-row .lg-b{font-size:11px;color:var(--ink-faint);width:60px;text-align:right;font-variant-numeric:tabular-nums;flex:none}
+
+/* 积分说明页 /credits(§8⑥) */
+.cr-main{max-width:100%}
+.cr-hero{text-align:center;padding:48px 24px 26px;background:radial-gradient(700px 300px at 50% 0%,var(--amber-wash),transparent 70%)}
+.cr-hero .cr-eb{font-size:11.5px;font-weight:700;letter-spacing:2px;color:var(--amber-deep);text-transform:uppercase}
+.cr-hero h1{font-family:var(--font-read);font-size:31px;font-weight:700;margin:13px 0 12px;line-height:1.35}
+.cr-hero h1 em{font-style:normal;color:var(--amber-deep)}
+.cr-hero p{font-size:14px;color:var(--ink-soft);max-width:440px;margin:0 auto;line-height:1.7}
+.cr-wrap{max-width:640px;margin:0 auto;padding:0 24px 56px}
+.cr-sec{margin-top:32px}
+.cr-sec .cr-h{font-size:12px;font-weight:700;letter-spacing:1.2px;color:var(--ink-faint);text-transform:uppercase;margin-bottom:13px;text-align:center}
+.cr-tab{border:1px solid var(--line);border-radius:16px;overflow:hidden;background:var(--surface)}
+.cr-row{display:grid;grid-template-columns:1.5fr .8fr;align-items:center}
+.cr-row>div{padding:13px 16px;font-size:13.5px}
+.cr-row.head>div{background:var(--surface-2);font-weight:700;font-size:12px}
+.cr-row:not(.head){border-top:1px solid var(--line-soft)}
+.cr-row .lab{color:var(--ink-soft)}
+.cr-row .r{text-align:right}
+.cr-row .val{text-align:right;font-weight:700;font-variant-numeric:tabular-nums;color:var(--amber-deep)}
+.cr-row .val.free{color:var(--sage)}
+.cr-anchor{margin-top:14px;background:var(--surface-2);border:1px solid var(--line);border-radius:14px;padding:16px 18px;font-size:13px;color:var(--ink-soft);line-height:1.75}
+.cr-anchor b{color:var(--ink);font-weight:700}
+.cr-packs{display:grid;grid-template-columns:repeat(3,1fr);gap:11px}
+.cr-pack{border:1px solid var(--line);border-radius:16px;padding:18px 14px;background:var(--surface);text-align:center}
+.cr-pack.hero{border:1.5px solid var(--amber-deep);box-shadow:var(--shadow)}
+.cr-pack .p{font-size:22px;font-weight:800;font-variant-numeric:tabular-nums;color:var(--ink)}
+.cr-pack .c{font-size:13px;color:var(--amber-deep);font-weight:700;margin-top:4px}
+.cr-pack .d{font-size:11px;color:var(--ink-faint);margin-top:7px;line-height:1.5}
+.cr-buy{margin-top:14px;border:1px solid var(--line);border-radius:16px;padding:18px;background:var(--surface);display:flex;gap:16px;align-items:center;flex-wrap:wrap}
+.cr-qr{width:110px;height:110px;border-radius:12px;background:#fff;border:5px solid #fff;box-shadow:var(--shadow-sm,0 1px 2px rgba(30,32,40,.05));flex:none;object-fit:contain}
+.cr-bt{flex:1;min-width:210px;font-size:12.5px;color:var(--ink-soft);line-height:1.8}
+.cr-bt b{color:var(--ink)}
+.cr-bt ol{margin:8px 0 8px 18px}
+@media (max-width:600px){.cr-packs{grid-template-columns:1fr}}
+
+/* 建空间扣费确认(§8②) */
+.chg-card{border:1px solid var(--line);border-radius:16px;margin-top:24px;background:var(--surface-2);padding:6px 18px;text-align:left}
+.chg-row{display:flex;justify-content:space-between;align-items:center;padding:11px 0;font-size:13.5px;border-bottom:1px dashed var(--line)}
+.chg-row:last-child{border-bottom:none}
+.chg-row .k{color:var(--ink-soft)}
+.chg-row .v{font-weight:700;font-variant-numeric:tabular-nums;color:var(--ink)}
+.chg-row.total .v{color:var(--amber-deep);font-size:16px}
+.chg-warn{margin:14px 0 4px;background:var(--danger-wash,rgba(192,88,75,.12));border:1px solid rgba(192,88,75,.25);border-radius:12px;padding:11px 13px;font-size:12px;color:#8E3F35;line-height:1.6;display:flex;gap:9px;text-align:left}
+.chg-warn svg{width:15px;height:15px;flex:none;margin-top:2px;stroke:var(--danger);stroke-width:2.3;fill:none;stroke-linecap:round}
+.chg-warn b{color:#7A342B}
+button.ns-confirm{width:100%;margin-top:14px;justify-content:center}
+.ns-outlet{margin-top:12px;font-size:12.5px;color:var(--ink-soft);text-align:center;line-height:1.7}
+.ns-outlet b{color:var(--amber-deep)}
+.linklike{background:none;border:none;color:var(--amber-deep);font:inherit;cursor:pointer;padding:0 2px;text-decoration:underline}
