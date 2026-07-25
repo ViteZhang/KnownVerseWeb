@@ -14,16 +14,18 @@ export const DEFAULT_QUOTA = 2;
 export type ReferralInfo = {
   referralCode: string | null;
   invitedCount: number; // 我成功邀请的人数（invited_count，不封顶）
-  spaceQuota: number; // 有效额度 = 四来源之和（generated）
-  baseQuota: number;
-  referralBonus: number; // 被邀请甜头（0/1）
-  inviteSpaceBonus: number; // 邀请他人累加（0..3）
+  invitedBy: string | null; // 我是否已被邀请过（纯积分制:判断能否再兑换邀请码）
+  spaceQuota: number; // 【已停用】旧四分量额度和；纯积分制下空间由积分承担
+  baseQuota: number; // 【已停用】
+  referralBonus: number; // 【已停用】旧被邀请甜头；apply_referral 已不再写
+  inviteSpaceBonus: number; // 【已停用】
   error: string | null;
 };
 
 const EMPTY: ReferralInfo = {
   referralCode: null,
   invitedCount: 0,
+  invitedBy: null,
   spaceQuota: DEFAULT_QUOTA,
   baseQuota: DEFAULT_QUOTA,
   referralBonus: 0,
@@ -42,7 +44,7 @@ export async function fetchReferralInfo(): Promise<ReferralInfo> {
   const { data, error } = await supabase
     .from('app_users')
     .select(
-      'referral_code, space_quota, base_space_quota, referral_bonus, invite_space_bonus, invited_count',
+      'referral_code, space_quota, base_space_quota, referral_bonus, invite_space_bonus, invited_count, invited_by',
     )
     .eq('id', session.user.id)
     .maybeSingle();
@@ -52,6 +54,7 @@ export async function fetchReferralInfo(): Promise<ReferralInfo> {
   return {
     referralCode: (row.referral_code as string) ?? null,
     invitedCount: (row.invited_count as number) ?? 0,
+    invitedBy: (row.invited_by as string) ?? null,
     spaceQuota: (row.space_quota as number) ?? DEFAULT_QUOTA,
     baseQuota: (row.base_space_quota as number) ?? DEFAULT_QUOTA,
     referralBonus: (row.referral_bonus as number) ?? 0,

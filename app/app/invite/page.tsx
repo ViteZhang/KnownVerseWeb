@@ -3,21 +3,22 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 
 import { Appbar } from '@/components/appbar';
+import { getBillingConfigPublic } from '@/lib/billing';
 import {
   applyReferral,
   applyResultMessage,
   fetchReferralInfo,
-  INVITE_BONUS_CAP,
   type ReferralInfo,
 } from '@/lib/referral';
 
-// 邀请好友页（移植自 App profile-view 的邀请卡片，§7）：
-// 上半——我的持久邀请码 + 复制/分享 + 解锁来源统计；
-// 下半——手动兑换他人邀请码（Web 补齐：注册时没填码的老用户也能在此解锁一个空间）。
+// 邀请好友页（纯积分制，§7）：
+// 上半——我的持久邀请码 + 复制/分享 + 邀请人数；
+// 下半——手动兑换他人邀请码（注册时没填码的老用户也能在此双边各得积分）。
 export default function InvitePage() {
   const [info, setInfo] = useState<ReferralInfo | null>(null);
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
+  const [refCredits, setRefCredits] = useState(50); // 邀请奖励(积分),取自 billing_config
 
   const [code, setCode] = useState('');
   const [redeeming, setRedeeming] = useState(false);
@@ -31,10 +32,13 @@ export default function InvitePage() {
       setLoading(false);
     });
   };
-  useEffect(load, []);
+  useEffect(() => {
+    load();
+    getBillingConfigPublic().then((c) => setRefCredits(c.referral_credits));
+  }, []);
 
   const shareText = (c: string) =>
-    `我在用「知识宇宙」边学边问，送你一个学习空间。用我的邀请码 ${c} 注册，你和我各解锁 1 个学习空间。`;
+    `我在用「知识宇宙」边学边问。用我的邀请码 ${c} 注册，你和我各得 ${refCredits} 积分。`;
 
   const copyCode = async (c: string) => {
     try {
@@ -72,8 +76,7 @@ export default function InvitePage() {
     }
   };
 
-  const alreadyRedeemed = (info?.referralBonus ?? 0) > 0;
-  const remainingInvite = Math.max(0, INVITE_BONUS_CAP - (info?.inviteSpaceBonus ?? 0));
+  const alreadyRedeemed = info?.invitedBy != null;
 
   return (
     <div className="app">
@@ -86,8 +89,7 @@ export default function InvitePage() {
         <div className="inv-panel">
           <h2>邀请好友</h2>
           <p className="inv-hint">
-            把邀请码发给朋友，每邀请 1 位成功注册，你和 TA 各解锁 1 个学习空间（邀请最多再解锁{' '}
-            {INVITE_BONUS_CAP} 个）。
+            把邀请码发给朋友，每邀请 1 位成功注册，你和 TA 各得 {refCredits} 积分。
           </p>
 
           {loading ? (
@@ -114,16 +116,14 @@ export default function InvitePage() {
 
               <div className="inv-stats">
                 <Stat label="已成功邀请" value={`${info.invitedCount} 人`} />
-                <Stat label="已解锁空间" value={`${info.spaceQuota} 个`} />
-                <Stat label="邀请还能解锁" value={`${remainingInvite} 个`} />
               </div>
 
               <div className="inv-source">
-                来源：基础 {info.baseQuota}
-                {info.referralBonus > 0 ? ` · 被邀请 +${info.referralBonus}` : ''}
-                {info.inviteSpaceBonus > 0
-                  ? ` · 邀请他人 +${info.inviteSpaceBonus}`
-                  : ''}
+                邀请奖励已进你的积分，可在{' '}
+                <Link href="/app/ledger" style={{ color: 'var(--amber-deep)' }}>
+                  积分流水
+                </Link>{' '}
+                查看。
               </div>
             </>
           ) : (
@@ -136,7 +136,7 @@ export default function InvitePage() {
           <div className="inv-panel">
             <h2>使用邀请码</h2>
             <p className="inv-hint">
-              有朋友的邀请码？填在这里，立即为你和 TA 各解锁 1 个学习空间（每人限用一次）。
+              有朋友的邀请码？填在这里，立即为你和 TA 各得 {refCredits} 积分（每人限用一次）。
             </p>
             <div className="inv-redeem">
               <input
