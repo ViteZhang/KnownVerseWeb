@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>知识宇宙 · 运营后台原型 V1</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<style>
+:root{
+  --paper:#FAF8F3; --surface:#FFFFFF; --surface-2:#F6F2EA;
+  --ink:#20242E; --ink-soft:#565B66; --ink-faint:#9A9EA8;
+  --line:#ECE6DB; --line-soft:#F3EEE5;
+  --amber:#DD9527; --amber-deep:#B0701A; --amber-wash:rgba(221,149,39,.16); --amber-line:rgba(221,149,39,.5);
+  --sage:#5E7A6B; --sage-wash:rgba(94,122,107,.14); --sage-line:rgba(94,122,107,.4);
+  --danger:#C0584B; --danger-wash:rgba(192,88,75,.12); --danger-line:rgba(192,88,75,.4);
+  --shadow-sm:0 1px 2px rgba(30,32,40,.05);
+  --shadow:0 1px 2px rgba(30,32,40,.04),0 10px 28px rgba(30,32,40,.07);
+  --shadow-lg:0 24px 60px rgba(30,32,40,.18);
+  --font-ui:"Inter","PingFang SC","Hiragino Sans GB","Microsoft YaHei",system-ui,sans-serif;
+  --mono:"SF Mono","JetBrains Mono","Roboto Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:var(--font-ui);color:var(--ink);line-height:1.45;
+  background:radial-gradient(1200px 600px at 50% -10%,#F0EADF 0%,rgba(240,234,223,0) 60%),linear-gradient(180deg,#EFE9DE,#E7E0D3);
+  min-height:100vh;padding:26px 18px 60px}
+button,input,select{font-family:inherit}
+:focus-visible{outline:2.5px solid var(--amber);outline-offset:2px;border-radius:6px}
+.tabnum{font-variant-numeric:tabular-nums}
+.mono{font-family:var(--mono)}
+
+.proto-head{max-width:1080px;margin:0 auto 16px;text-align:center}
+.proto-head .mark{font-size:15px;font-weight:800;letter-spacing:.5px;color:var(--ink)}
+.proto-head .mark span{color:var(--amber-deep)}
+.proto-head p{font-size:12.5px;color:#857F73;margin-top:4px}
+
+/* browser chrome */
+.win{max-width:1080px;margin:0 auto;background:var(--surface);border:1px solid var(--line);
+  border-radius:18px;box-shadow:var(--shadow);overflow:hidden}
+.winbar{display:flex;align-items:center;gap:8px;padding:11px 16px;background:var(--surface-2);border-bottom:1px solid var(--line)}
+.dot{width:11px;height:11px;border-radius:50%;background:#D9D2C4}
+.url{margin-left:10px;flex:1;background:var(--surface);border:1px solid var(--line);border-radius:8px;
+  padding:6px 12px;font-size:12px;color:var(--ink-faint)}
+.url b{color:var(--ink-soft);font-weight:500}
+.pill-admin{font-size:10.5px;font-weight:700;color:var(--danger);background:var(--danger-wash);
+  border:1px solid var(--danger-line);padding:3px 9px;border-radius:999px}
+
+/* appbar */
+.appbar{display:flex;align-items:center;gap:14px;padding:14px 22px;border-bottom:1px solid var(--line-soft);flex-wrap:wrap}
+.brand{font-size:15px;font-weight:800}
+.brand span{color:var(--amber-deep)}
+.crumb{font-size:12.5px;color:var(--ink-faint)}
+.appbar .spacer{flex:1}
+.avatar{width:34px;height:34px;border-radius:50%;background:var(--ink);color:#fff;display:grid;place-items:center;font-weight:600;font-size:13px;flex:none}
+
+/* nav */
+.nav{display:flex;gap:8px;padding:14px 22px 0;flex-wrap:wrap}
+.nav button{font-size:13px;font-weight:600;color:#6E6859;background:var(--surface-2);
+  border:1px solid var(--line);padding:9px 16px;border-radius:999px;cursor:pointer;transition:.16s}
+.nav button:hover{background:#fff;color:var(--ink)}
+.nav button.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+
+.pane{padding:20px 22px 26px;display:none}
+.pane.on{display:block}
+.seclabel{font-size:11px;font-weight:700;letter-spacing:1.2px;color:var(--ink-faint);text-transform:uppercase;margin:0 0 12px}
+
+/* stat cards */
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.stat{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:15px 16px;box-shadow:var(--shadow-sm)}
+.stat .k{font-size:11.5px;color:var(--ink-faint);font-weight:600}
+.stat .v{font-size:26px;font-weight:800;margin-top:6px;letter-spacing:-.5px}
+.stat .s{font-size:11.5px;color:var(--ink-soft);margin-top:4px}
+.stat .s b{color:var(--sage)}
+.stat.accent{background:linear-gradient(180deg,var(--amber-wash),transparent)}
+.stat.accent .v{color:var(--amber-deep)}
+
+/* exit-line health */
+.health{margin-top:14px;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:15px 18px;box-shadow:var(--shadow-sm)}
+.health .top{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.health h3{font-size:13.5px;font-weight:700}
+.health .hint{font-size:11.5px;color:var(--ink-faint)}
+.health .rows{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:12px}
+.grow .lab{display:flex;justify-content:space-between;font-size:12px;margin-bottom:6px}
+.grow .lab .r{color:var(--ink-soft)}
+.gtrack{height:7px;border-radius:999px;background:#EEE7DA;overflow:hidden}
+.gfill{height:100%;border-radius:999px;background:var(--sage)}
+.gfill.warn{background:var(--amber)}
+.gfill.hot{background:var(--danger)}
+
+/* toolbar */
+.toolbar{display:flex;gap:10px;align-items:center;margin:20px 0 12px;flex-wrap:wrap}
+.search{flex:1;min-width:180px;display:flex;align-items:center;gap:8px;background:var(--surface);
+  border:1px solid var(--line);border-radius:10px;padding:8px 12px}
+.search svg{width:15px;height:15px;stroke:var(--ink-faint);fill:none;stroke-width:2}
+.search input{border:none;outline:none;flex:1;font-size:13px;background:transparent;color:var(--ink)}
+select.sel{font-size:12.5px;color:var(--ink-soft);background:var(--surface);border:1px solid var(--line);
+  border-radius:10px;padding:8px 12px;cursor:pointer}
+
+/* table */
+.tblwrap{border:1px solid var(--line);border-radius:14px;overflow:hidden;background:var(--surface)}
+table{width:100%;border-collapse:collapse;font-size:12.5px}
+thead th{text-align:left;font-size:11px;font-weight:700;letter-spacing:.4px;color:var(--ink-faint);
+  text-transform:uppercase;padding:11px 14px;background:var(--surface-2);border-bottom:1px solid var(--line);white-space:nowrap}
+tbody td{padding:12px 14px;border-bottom:1px solid var(--line-soft);color:var(--ink-soft);vertical-align:middle}
+tbody tr:last-child td{border-bottom:none}
+tbody tr.click{cursor:pointer;transition:.12s}
+tbody tr.click:hover{background:var(--surface-2)}
+td .name{font-weight:600;color:var(--ink)}
+td .mail{font-size:11px;color:var(--ink-faint)}
+.num{font-variant-numeric:tabular-nums;font-weight:600;color:var(--ink)}
+.coinpair{display:flex;gap:5px;align-items:center;flex-wrap:wrap}
+.chip-f,.chip-p{font-size:10.5px;font-weight:700;padding:2px 7px;border-radius:999px;font-variant-numeric:tabular-nums}
+.chip-f{background:var(--sage-wash);color:var(--sage);border:1px solid var(--sage-line)}
+.chip-p{background:var(--amber-wash);color:var(--amber-deep);border:1px solid var(--amber-line)}
+
+/* status badges */
+.badge{font-size:10.5px;font-weight:700;padding:3px 9px;border-radius:999px;white-space:nowrap}
+.b-unused{background:var(--sage-wash);color:var(--sage);border:1px solid var(--sage-line)}
+.b-used{background:var(--surface-2);color:var(--ink-faint);border:1px solid var(--line)}
+.b-void{background:var(--danger-wash);color:var(--danger);border:1px solid var(--danger-line)}
+.b-exp{background:rgba(154,158,168,.14);color:var(--ink-faint);border:1px solid var(--line)}
+
+.lnk{font-size:12px;font-weight:600;color:var(--danger);background:none;border:none;cursor:pointer;padding:4px 6px;border-radius:6px}
+.lnk:hover{background:var(--danger-wash)}
+.lnk:disabled{color:var(--ink-faint);cursor:default;background:none;opacity:.6}
+.lnk.copy{color:var(--amber-deep)}
+.lnk.copy:hover{background:var(--amber-wash)}
+
+/* generate form */
+.gengrid{display:grid;grid-template-columns:1.1fr .9fr;gap:20px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:20px;box-shadow:var(--shadow-sm)}
+.field{margin-bottom:16px}
+.field>label{display:block;font-size:12px;font-weight:700;color:var(--ink-soft);margin-bottom:8px}
+.denoms{display:flex;gap:8px;flex-wrap:wrap}
+.denom{flex:1;min-width:96px;border:1.5px solid var(--line);background:var(--surface);border-radius:12px;
+  padding:11px 10px;cursor:pointer;text-align:center;transition:.14s}
+.denom:hover{border-color:var(--amber-line)}
+.denom.on{border-color:var(--amber);background:var(--amber-wash)}
+.denom .c{font-size:17px;font-weight:800;color:var(--ink)}
+.denom.on .c{color:var(--amber-deep)}
+.denom .y{font-size:11px;color:var(--ink-faint);margin-top:2px}
+.inp{width:100%;font-size:14px;color:var(--ink);background:var(--surface);border:1px solid var(--line);
+  border-radius:10px;padding:10px 13px;outline:none}
+.inp:focus{border-color:var(--amber-line)}
+.inp::placeholder{color:var(--ink-faint)}
+.hintline{font-size:11.5px;color:var(--ink-faint);margin-top:6px;line-height:1.5}
+.btn{display:inline-flex;align-items:center;gap:8px;font-size:13.5px;font-weight:700;padding:11px 18px;
+  border-radius:11px;cursor:pointer;border:1px solid transparent;transition:.16s}
+.btn.primary{background:var(--ink);color:#fff}
+.btn.primary:hover{background:#000}
+.btn.ghost{background:var(--surface);border-color:var(--line);color:var(--ink)}
+.btn.ghost:hover{background:var(--surface-2)}
+.btn svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:2}
+.btn.primary svg{stroke:var(--amber)}
+
+.result{margin-top:2px}
+.result.empty{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;
+  min-height:220px;color:var(--ink-faint);text-align:center}
+.result.empty svg{width:34px;height:34px;stroke:var(--line);fill:none;stroke-width:1.6}
+.rsum{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px}
+.rsum .t{font-size:13px;font-weight:700}
+.rsum .t b{color:var(--amber-deep)}
+.codelist{max-height:280px;overflow:auto;border:1px solid var(--line);border-radius:12px;background:var(--surface-2)}
+.codeitem{display:flex;align-items:center;justify-content:space-between;padding:9px 13px;border-bottom:1px solid var(--line-soft);font-family:var(--mono);font-size:13px;color:var(--ink);letter-spacing:.5px}
+.codeitem:last-child{border-bottom:none}
+.codeitem button{font-family:var(--font-ui)}
+.warnbox{display:flex;gap:10px;background:var(--amber-wash);border:1px solid var(--amber-line);
+  border-radius:12px;padding:12px 14px;margin-top:14px}
+.warnbox svg{width:17px;height:17px;stroke:var(--amber-deep);fill:none;stroke-width:2;flex:none;margin-top:1px}
+.warnbox p{font-size:11.5px;color:#8a6a24;line-height:1.55}
+.warnbox b{color:var(--amber-deep)}
+
+/* filter chips */
+.fchips{display:flex;gap:7px;flex-wrap:wrap}
+.fchip{font-size:12px;font-weight:600;color:var(--ink-soft);background:var(--surface);border:1px solid var(--line);
+  padding:7px 13px;border-radius:999px;cursor:pointer;transition:.14s}
+.fchip:hover{background:var(--surface-2)}
+.fchip.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+.fchip .n{opacity:.6;margin-left:5px}
+
+/* manage summary */
+.msum{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:6px}
+.msum .m{border:1px solid var(--line);border-radius:12px;padding:12px 14px;background:var(--surface)}
+.msum .m .k{font-size:11px;color:var(--ink-faint);font-weight:600}
+.msum .m .v{font-size:19px;font-weight:800;margin-top:4px;font-variant-numeric:tabular-nums}
+.msum .m .v small{font-size:12px;font-weight:600;color:var(--ink-faint)}
+
+/* drawer */
+.scrim{position:fixed;inset:0;background:rgba(30,32,40,.32);opacity:0;pointer-events:none;transition:.2s;z-index:40}
+.scrim.on{opacity:1;pointer-events:auto}
+.drawer{position:fixed;top:0;right:0;height:100%;width:min(420px,92vw);background:var(--paper);
+  box-shadow:var(--shadow-lg);transform:translateX(100%);transition:.24s cubic-bezier(.4,0,.2,1);z-index:50;
+  display:flex;flex-direction:column}
+.drawer.on{transform:translateX(0)}
+.dhead{padding:20px 22px 16px;border-bottom:1px solid var(--line)}
+.dhead .row{display:flex;align-items:center;gap:12px}
+.dhead .av{width:44px;height:44px;border-radius:50%;background:var(--ink);color:#fff;display:grid;place-items:center;font-weight:700;font-size:17px;flex:none}
+.dhead .nm{font-size:16px;font-weight:800}
+.dhead .em{font-size:12px;color:var(--ink-faint);margin-top:1px}
+.dclose{margin-left:auto;background:none;border:none;cursor:pointer;color:var(--ink-faint);font-size:22px;line-height:1;padding:4px}
+.dmeta{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px}
+.dmeta .mi{background:var(--surface);border:1px solid var(--line);border-radius:11px;padding:10px 12px}
+.dmeta .mi .k{font-size:10.5px;color:var(--ink-faint);font-weight:600}
+.dmeta .mi .v{font-size:15px;font-weight:800;margin-top:3px;font-variant-numeric:tabular-nums}
+.dbody{flex:1;overflow:auto;padding:18px 22px 30px}
+.dbody h4{font-size:11px;font-weight:700;letter-spacing:1px;color:var(--ink-faint);text-transform:uppercase;margin-bottom:12px}
+.led{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--line-soft)}
+.led:last-child{border-bottom:none}
+.led .lt{font-size:13px;color:var(--ink)}
+.led .ld{font-size:11px;color:var(--ink-faint);margin-top:2px}
+.led .amt{font-variant-numeric:tabular-nums;font-weight:800;font-size:14px}
+.led .amt.plus{color:var(--sage)}
+.led .amt.minus{color:var(--ink-soft)}
+
+.toast{position:fixed;left:50%;bottom:30px;transform:translateX(-50%) translateY(20px);opacity:0;
+  background:var(--ink);color:#fff;font-size:12.5px;font-weight:600;padding:10px 18px;border-radius:999px;
+  transition:.2s;z-index:60;pointer-events:none;box-shadow:var(--shadow)}
+.toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+
+@media(max-width:820px){
+  .stats{grid-template-columns:repeat(2,1fr)}
+  .gengrid{grid-template-columns:1fr}
+  .health .rows,.msum{grid-template-columns:1fr}
+  .msum{grid-template-columns:repeat(2,1fr)}
+  .hide-sm{display:none}
+}
+</style>
+</head>
+<body>
+
+<div class="proto-head">
+  <div class="mark">知识<span>宇宙</span> · 运营后台原型 V1</div>
+  <p>内部工具 · 纯积分制 · 激活码线下核销 —— 数据为模拟，字段与已上线库结构对齐</p>
+</div>
+
+<div class="win">
+  <div class="winbar">
+    <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+    <div class="url">🔒 <b>knowledgeverse.space</b>/admin</div>
+    <span class="pill-admin">仅管理员</span>
+  </div>
+
+  <div class="appbar">
+    <div class="brand">知识<span>宇宙</span></div>
+    <span class="crumb">运营后台</span>
+    <div class="spacer"></div>
+    <span class="crumb hide-sm">创始人 · Aiyo</span>
+    <div class="avatar">A</div>
+  </div>
+
+  <div class="nav">
+    <button class="on" data-tab="dash">用量看板</button>
+    <button data-tab="gen">生成激活码</button>
+    <button data-tab="mng">激活码管理</button>
+  </div>
+
+  <!-- ============ 用量看板 ============ -->
+  <section class="pane on" id="dash">
+    <div class="stats">
+      <div class="stat">
+        <div class="k">总用户</div>
+        <div class="v tabnum">128</div>
+        <div class="s">本周新增 <b>+14</b></div>
+      </div>
+      <div class="stat">
+        <div class="k">本周活跃学习者</div>
+        <div class="v tabnum">34</div>
+        <div class="s">active_learning · 占比 27%</div>
+      </div>
+      <div class="stat accent">
+        <div class="k">本月消耗积分</div>
+        <div class="v tabnum">8,420</div>
+        <div class="s">免费池成本闸 · 人均 66</div>
+      </div>
+      <div class="stat">
+        <div class="k">累计激活码核销</div>
+        <div class="v tabnum">23</div>
+        <div class="s">回收 <b>13,900</b> 积分 · ¥620</div>
+      </div>
+    </div>
+
+    <div class="health">
+      <div class="top">
+        <h3>运营健康 · 退出线监控</h3>
+        <span class="hint">每周核销 &gt; 10 笔 或 月流水 &gt; ¥3000 → 该启动正式支付了，别让人肉充值吃掉半年</span>
+      </div>
+      <div class="rows">
+        <div class="grow">
+          <div class="lab"><span>本周核销笔数</span><span class="r"><b class="tabnum">6</b> / 10 笔</span></div>
+          <div class="gtrack"><div class="gfill warn" style="width:60%"></div></div>
+        </div>
+        <div class="grow">
+          <div class="lab"><span>本月充值流水</span><span class="r"><b class="tabnum">¥476</b> / ¥3000</span></div>
+          <div class="gtrack"><div class="gfill" style="width:16%"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="toolbar">
+      <div class="search">
+        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg>
+        <input id="uSearch" placeholder="搜昵称 / 邮箱">
+      </div>
+      <select class="sel" id="uSort">
+        <option value="active">按最近活跃</option>
+        <option value="spend">按累计消耗</option>
+        <option value="paid">按充值余额</option>
+        <option value="reg">按注册时间</option>
+      </select>
+    </div>
+
+    <div class="tblwrap">
+      <table>
+        <thead><tr>
+          <th>用户</th><th>余额（免/充）</th><th>空间</th><th>累计消耗</th>
+          <th class="hide-sm">邀请</th><th>最近活跃</th><th class="hide-sm">注册</th>
+        </tr></thead>
+        <tbody id="uBody"></tbody>
+      </table>
+    </div>
+    <p class="hintline" style="margin-top:10px">点任一行看该用户的积分流水（credit_ledger）。跨用户读取走管理员 Edge Function（service role），普通登录用户对这些表按 RLS 只能读自己。</p>
+  </section>
+
+  <!-- ============ 生成激活码 ============ -->
+  <section class="pane" id="gen">
+    <div class="gengrid">
+      <div class="card">
+        <div class="field">
+          <label>面额</label>
+          <div class="denoms" id="denoms">
+            <div class="denom on" data-c="300" data-y="¥9.9"><div class="c tabnum">300</div><div class="y">¥9.9</div></div>
+            <div class="denom" data-c="1000" data-y="¥29.9"><div class="c tabnum">1000</div><div class="y">¥29.9</div></div>
+            <div class="denom" data-c="2500" data-y="¥68"><div class="c tabnum">2500</div><div class="y">¥68</div></div>
+            <div class="denom" data-c="custom" data-y="自定义"><div class="c">自定义</div><div class="y">其他面额</div></div>
+          </div>
+          <input class="inp mono" id="customCredits" placeholder="自定义积分数，如 500" style="display:none;margin-top:10px">
+        </div>
+
+        <div class="field">
+          <label>生成数量</label>
+          <input class="inp mono" id="genCount" type="number" value="10" min="1" max="200">
+          <p class="hintline">单次最多 200 张。KV-XXXX-XXXX-XXXX 格式，32 字母表（剔除 0 O 1 I L），微信里好手打。</p>
+        </div>
+
+        <div class="field">
+          <label>批次 batch <span style="font-weight:400;color:var(--ink-faint)">（按批统计、对账用）</span></label>
+          <input class="inp mono" id="genBatch" placeholder="2026-07">
+        </div>
+
+        <div class="field">
+          <label>备注 note <span style="font-weight:400;color:var(--ink-faint)">（写清对应谁的哪笔转账）</span></label>
+          <input class="inp" id="genNote" placeholder="如：小红书活动 / 微信 xxx 转账 ¥29.9">
+        </div>
+
+        <button class="btn primary" id="genBtn">
+          <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+          生成激活码
+        </button>
+
+        <div class="warnbox">
+          <svg viewBox="0 0 24 24"><path d="M12 9v4M12 17h.01"/><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg>
+          <p><b>安全边界：</b>生成走服务端 <span class="mono">generate_credit_codes</span>（service role）；普通登录用户对该函数与 <span class="mono">credit_codes</span> 表<b>完全无权限</b>，防拖库枚举未使用的码。此后台页受 <span class="mono">is_admin</span> 门禁。</p>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="result empty" id="genResult">
+          <svg viewBox="0 0 24 24"><rect x="3" y="8" width="18" height="12" rx="2"/><path d="M7 8V6a5 5 0 0 1 10 0v2"/></svg>
+          <div style="font-size:13px">生成的激活码会出现在这里</div>
+          <div style="font-size:11.5px">左侧填好面额、数量、批次、备注</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 激活码管理 ============ -->
+  <section class="pane" id="mng">
+    <div class="msum" id="mSum"></div>
+
+    <div class="toolbar">
+      <div class="fchips" id="fchips">
+        <button class="fchip on" data-f="all">全部 <span class="n" id="cAll">0</span></button>
+        <button class="fchip" data-f="unused">未用 <span class="n" id="cUnused">0</span></button>
+        <button class="fchip" data-f="used">已用 <span class="n" id="cUsed">0</span></button>
+        <button class="fchip" data-f="void">已停用 <span class="n" id="cVoid">0</span></button>
+      </div>
+      <div class="spacer" style="flex:1"></div>
+      <select class="sel" id="mBatch"><option value="all">全部批次</option></select>
+      <div class="search" style="flex:0 0 200px">
+        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg>
+        <input id="mSearch" placeholder="搜码 / 备注">
+      </div>
+    </div>
+
+    <div class="tblwrap">
+      <table>
+        <thead><tr>
+          <th>激活码</th><th>面额</th><th class="hide-sm">批次</th><th>备注（对账）</th>
+          <th>状态</th><th class="hide-sm">兑换人 / 时间</th><th>操作</th>
+        </tr></thead>
+        <tbody id="mBody"></tbody>
+      </table>
+    </div>
+    <p class="hintline" style="margin-top:10px">「作废」= 把 <span class="mono">active</span> 置 false，只对未兑换的码可用，已兑换的不影响用户到账积分。同样走管理员 Edge Function。</p>
+  </section>
+</div>
+
+<!-- drawer -->
+<div class="scrim" id="scrim"></div>
+<aside class="drawer" id="drawer">
+  <div class="dhead">
+    <div class="row">
+      <div class="av" id="dAv">A</div>
+      <div>
+        <div class="nm" id="dName">—</div>
+        <div class="em" id="dMail">—</div>
+      </div>
+      <button class="dclose" id="dClose">×</button>
+    </div>
+    <div class="dmeta">
+      <div class="mi"><div class="k">免费桶 free_balance</div><div class="v" id="dFree">0</div></div>
+      <div class="mi"><div class="k">充值桶 paid_balance</div><div class="v" id="dPaid">0</div></div>
+      <div class="mi"><div class="k">学习空间</div><div class="v" id="dSpaces">0</div></div>
+      <div class="mi"><div class="k">累计消耗</div><div class="v" id="dSpend">0</div></div>
+    </div>
+  </div>
+  <div class="dbody">
+    <h4>积分流水 credit_ledger</h4>
+    <div id="dLedger"></div>
+  </div>
+</aside>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ---------- mock data ---------- */
+const users = [
+  {nm:"林知远",em:"z***@gmail.com",free:24,paid:820,spaces:3,spend:410,invites:4,active:"2 小时前",reg:"06-14"},
+  {nm:"Aiyo（本人）",em:"a***@dreamerlab.co",free:100,paid:2140,spaces:5,spend:1280,invites:2,active:"12 分钟前",reg:"06-01"},
+  {nm:"陈默",em:"c***@163.com",free:0,paid:150,spaces:1,spend:340,invites:0,active:"昨天",reg:"07-08"},
+  {nm:"苏晚晴",em:"s***@qq.com",free:63,paid:0,spaces:2,spend:290,invites:1,active:"3 小时前",reg:"07-02"},
+  {nm:"Kevin Tan",em:"k***@outlook.com",free:100,paid:930,spaces:4,spend:760,invites:5,active:"5 小时前",reg:"06-20"},
+  {nm:"周聿",em:"z***@foxmail.com",free:8,paid:0,spaces:1,spend:142,invites:0,active:"4 天前",reg:"07-11"},
+  {nm:"郑一诺",em:"y***@gmail.com",free:150,paid:0,spaces:1,spend:52,invites:1,active:"1 小时前",reg:"07-22"},
+  {nm:"Mabel Lim",em:"m***@gmail.com",free:0,paid:400,spaces:2,spend:520,invites:2,active:"昨天",reg:"06-28"},
+  {nm:"何书桓",em:"h***@126.com",free:45,paid:0,spaces:1,spend:198,invites:0,active:"6 天前",reg:"07-05"},
+  {nm:"Yuki 张",em:"y***@icloud.com",free:100,paid:1200,spaces:3,spend:610,invites:3,active:"30 分钟前",reg:"06-16"},
+];
+const ledgerFor = (u)=>{
+  const t=[];
+  t.push({r:"注册新手包",d:"welcome_bonus · 进充值桶",a:150});
+  if(u.paid>150) t.push({r:"兑换激活码",d:"redeem_code · KV-••••",a:u.paid>1000?1000:300});
+  if(u.invites>0) t.push({r:"邀请奖励",d:"referral_inviter",a:50});
+  t.push({r:"每日签到",d:"daily_checkin",a:5});
+  t.push({r:"建学习空间",d:"space_creation",a:-50});
+  t.push({r:"生成单元",d:"unit_generation",a:-10});
+  t.push({r:"生成单元",d:"unit_generation",a:-10});
+  t.push({r:"划词问 AI",d:"ask_ai",a:-1});
+  return t;
+};
+
+let codes = [];
+const BATCHES=["2026-07","2026-06"];
+const seed=[
+  ["2026-07",1000,"微信 zhou** ¥29.9","used","陈默","07-08 21:14"],
+  ["2026-07",300,"小红书 7 月活动","unused",null,null],
+  ["2026-07",300,"小红书 7 月活动","unused",null,null],
+  ["2026-07",300,"小红书 7 月活动","used","苏晚晴","07-09 10:02"],
+  ["2026-07",2500,"KOL 合作 @学姐说","unused",null,null],
+  ["2026-07",1000,"微信 lim** ¥29.9","used","Mabel Lim","07-06 19:30"],
+  ["2026-06",1000,"内测答谢 · 种子用户","used","林知远","06-22 08:41"],
+  ["2026-06",300,"朋友白嫖","void",null,null],
+  ["2026-06",2500,"微信 tan** ¥68","used","Kevin Tan","06-25 14:07"],
+  ["2026-06",1000,"微信 yuki** ¥29.9","used","Yuki 张","06-18 22:15"],
+  ["2026-06",300,"公众号抽奖","unused",null,null],
+  ["2026-06",300,"公众号抽奖","expired",null,null],
+];
+const ALPHA="ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+function genCode(){
+  const seg=()=>Array.from({length:4},()=>ALPHA[Math.floor(Math.random()*ALPHA.length)]).join("");
+  return `KV-${seg()}-${seg()}-${seg()}`;
+}
+seed.forEach(s=>codes.push({code:genCode(),credits:s[1],batch:s[0],note:s[2],status:s[3],by:s[4],at:s[5]}));
+
+const yen=c=>({300:"¥9.9",1000:"¥29.9",2500:"¥68"}[c]||"—");
+
+/* ---------- tabs ---------- */
+document.querySelectorAll('.nav button').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('.nav button').forEach(x=>x.classList.remove('on'));
+  document.querySelectorAll('.pane').forEach(x=>x.classList.remove('on'));
+  b.classList.add('on');
+  document.getElementById(b.dataset.tab).classList.add('on');
+});
+
+/* ---------- toast ---------- */
+let tt;
+function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('on');clearTimeout(tt);tt=setTimeout(()=>t.classList.remove('on'),1600);}
+
+/* ---------- users table ---------- */
+function renderUsers(){
+  const q=document.getElementById('uSearch').value.trim().toLowerCase();
+  const sort=document.getElementById('uSort').value;
+  let rows=users.filter(u=>u.nm.toLowerCase().includes(q)||u.em.toLowerCase().includes(q));
+  const key={active:'active',spend:'spend',paid:'paid',reg:'reg'}[sort];
+  if(sort==='spend') rows=[...rows].sort((a,b)=>b.spend-a.spend);
+  else if(sort==='paid') rows=[...rows].sort((a,b)=>b.paid-a.paid);
+  const body=document.getElementById('uBody');
+  body.innerHTML=rows.map((u,i)=>`
+    <tr class="click" data-i="${users.indexOf(u)}">
+      <td><div class="name">${u.nm}</div><div class="mail mono">${u.em}</div></td>
+      <td><div class="coinpair"><span class="chip-f">免 ${u.free}</span><span class="chip-p">充 ${u.paid}</span></div></td>
+      <td class="num">${u.spaces}</td>
+      <td class="num">${u.spend}</td>
+      <td class="hide-sm num">${u.invites}</td>
+      <td>${u.active}</td>
+      <td class="hide-sm" style="color:var(--ink-faint)">${u.reg}</td>
+    </tr>`).join('');
+  body.querySelectorAll('tr').forEach(tr=>tr.onclick=()=>openDrawer(users[+tr.dataset.i]));
+}
+document.getElementById('uSearch').oninput=renderUsers;
+document.getElementById('uSort').onchange=renderUsers;
+
+/* ---------- drawer ---------- */
+function openDrawer(u){
+  document.getElementById('dAv').textContent=u.nm[0];
+  document.getElementById('dName').textContent=u.nm;
+  document.getElementById('dMail').textContent=u.em;
+  document.getElementById('dFree').textContent=u.free;
+  document.getElementById('dPaid').textContent=u.paid;
+  document.getElementById('dSpaces').textContent=u.spaces;
+  document.getElementById('dSpend').textContent=u.spend;
+  document.getElementById('dLedger').innerHTML=ledgerFor(u).map(l=>`
+    <div class="led">
+      <div><div class="lt">${l.r}</div><div class="ld mono">${l.d}</div></div>
+      <div class="amt ${l.a>0?'plus':'minus'}">${l.a>0?'+':''}${l.a}</div>
+    </div>`).join('');
+  document.getElementById('scrim').classList.add('on');
+  document.getElementById('drawer').classList.add('on');
+}
+function closeDrawer(){document.getElementById('scrim').classList.remove('on');document.getElementById('drawer').classList.remove('on');}
+document.getElementById('dClose').onclick=closeDrawer;
+document.getElementById('scrim').onclick=closeDrawer;
+
+/* ---------- generate ---------- */
+let denom=300;
+document.querySelectorAll('.denom').forEach(d=>d.onclick=()=>{
+  document.querySelectorAll('.denom').forEach(x=>x.classList.remove('on'));
+  d.classList.add('on');
+  denom=d.dataset.c;
+  document.getElementById('customCredits').style.display=denom==='custom'?'block':'none';
+});
+document.getElementById('genBtn').onclick=()=>{
+  let credits=denom==='custom'?parseInt(document.getElementById('customCredits').value):parseInt(denom);
+  const count=Math.min(200,Math.max(1,parseInt(document.getElementById('genCount').value)||1));
+  const batch=document.getElementById('genBatch').value.trim()||"未分批";
+  const note=document.getElementById('genNote').value.trim()||"—";
+  if(!credits||credits<1){toast("请填写有效面额");return;}
+  const fresh=[];
+  for(let i=0;i<count;i++){
+    const c={code:genCode(),credits,batch,note,status:"unused",by:null,at:null};
+    fresh.push(c); codes.unshift(c);
+  }
+  if(!BATCHES.includes(batch)) BATCHES.unshift(batch);
+  const box=document.getElementById('genResult');
+  box.className='result';
+  box.innerHTML=`
+    <div class="rsum">
+      <div class="t">生成 <b>${count}</b> 张 · 面额 ${credits} · 批次 ${batch}</div>
+      <button class="btn ghost" id="copyAll"><svg viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>复制全部</button>
+    </div>
+    <div class="codelist">${fresh.map(c=>`
+      <div class="codeitem"><span>${c.code}</span><button class="lnk copy" data-c="${c.code}">复制</button></div>`).join('')}</div>
+    <p class="hintline">这些码已写入 <span class="mono">credit_codes</span>（模拟）。切到「激活码管理」可看到它们，处于「未用」态。发码时记得在备注里对上买家。</p>`;
+  box.querySelectorAll('.copy').forEach(b=>b.onclick=()=>{navigator.clipboard?.writeText(b.dataset.c);toast("已复制 "+b.dataset.c);});
+  document.getElementById('copyAll').onclick=()=>{navigator.clipboard?.writeText(fresh.map(c=>c.code).join("\n"));toast("已复制 "+count+" 张");};
+  renderManage();
+  toast("已生成 "+count+" 张激活码");
+};
+
+/* ---------- manage ---------- */
+let mFilter='all';
+document.querySelectorAll('.fchip').forEach(c=>c.onclick=()=>{
+  document.querySelectorAll('.fchip').forEach(x=>x.classList.remove('on'));
+  c.classList.add('on'); mFilter=c.dataset.f; renderManage();
+});
+document.getElementById('mSearch').oninput=renderManage;
+document.getElementById('mBatch').onchange=renderManage;
+
+const badge={unused:['b-unused','未用'],used:['b-used','已用'],void:['b-void','已停用'],expired:['b-exp','已过期']};
+function voidCode(code){
+  const c=codes.find(x=>x.code===code);
+  if(c&&c.status==='unused'){c.status='void';renderManage();toast("已作废 "+code);}
+}
+function renderManage(){
+  // batch options
+  const sel=document.getElementById('mBatch');
+  const cur=sel.value;
+  const bs=[...new Set(codes.map(c=>c.batch))];
+  sel.innerHTML='<option value="all">全部批次</option>'+bs.map(b=>`<option value="${b}">${b}</option>`).join('');
+  sel.value=bs.includes(cur)?cur:'all';
+
+  const q=document.getElementById('mSearch').value.trim().toLowerCase();
+  const bf=sel.value;
+  let rows=codes.filter(c=>{
+    if(mFilter!=='all'&&c.status!==mFilter) return false;
+    if(bf!=='all'&&c.batch!==bf) return false;
+    if(q&&!(c.code.toLowerCase().includes(q)||(c.note||'').toLowerCase().includes(q))) return false;
+    return true;
+  });
+  document.getElementById('mBody').innerHTML=rows.length?rows.map(c=>{
+    const[cls,lab]=badge[c.status];
+    return `<tr>
+      <td class="mono" style="color:var(--ink);font-weight:600">${c.code}</td>
+      <td class="num">${c.credits} <span style="color:var(--ink-faint);font-weight:400">${yen(c.credits)}</span></td>
+      <td class="hide-sm mono" style="color:var(--ink-faint)">${c.batch}</td>
+      <td style="max-width:180px">${c.note}</td>
+      <td><span class="badge ${cls}">${lab}</span></td>
+      <td class="hide-sm">${c.by?`${c.by}<div class="mail mono">${c.at}</div>`:'<span style="color:var(--ink-faint)">—</span>'}</td>
+      <td><button class="lnk" ${c.status==='unused'?'':'disabled'} onclick="voidCode('${c.code}')">作废</button></td>
+    </tr>`;
+  }).join(''):`<tr><td colspan="7" style="text-align:center;padding:30px;color:var(--ink-faint)">没有符合条件的激活码</td></tr>`;
+
+  // counts + summary
+  const cnt=s=>codes.filter(c=>c.status===s).length;
+  document.getElementById('cAll').textContent=codes.length;
+  document.getElementById('cUnused').textContent=cnt('unused');
+  document.getElementById('cUsed').textContent=cnt('used');
+  document.getElementById('cVoid').textContent=cnt('void');
+
+  const usedCredits=codes.filter(c=>c.status==='used').reduce((s,c)=>s+c.credits,0);
+  const unusedCredits=codes.filter(c=>c.status==='unused').reduce((s,c)=>s+c.credits,0);
+  const yenOf=c=>({300:9.9,1000:29.9,2500:68}[c]||0);
+  const revenue=codes.filter(c=>c.status==='used').reduce((s,c)=>s+yenOf(c.credits),0);
+  document.getElementById('mSum').innerHTML=`
+    <div class="m"><div class="k">已发行</div><div class="v tabnum">${codes.length} <small>张</small></div></div>
+    <div class="m"><div class="k">已核销</div><div class="v tabnum">${cnt('used')} <small>张 · ${usedCredits} 积分</small></div></div>
+    <div class="m"><div class="k">未兑换沉淀</div><div class="v tabnum">${unusedCredits} <small>积分待兑</small></div></div>
+    <div class="m"><div class="k">累计充值流水</div><div class="v tabnum">¥${revenue.toFixed(1)}</div></div>`;
+}
+
+/* init */
+renderUsers();
+renderManage();
+</script>
+</body>
+</html>

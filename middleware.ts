@@ -1,7 +1,9 @@
 // 路由分区（施工 §3 · Plan A）：
 //   公开区 —— 落地页 `/`、博客 `/blog/*`、SEO 文件等，任何人可访问、可被索引，不做鉴权。
 //   产品区 —— `/app/*`，登录后才可进；未登录一律打回 /login。
-// 为不给公开静态页平添一次认证往返（影响首屏/SEO），只有 /app/* 与 /login 才走 Supabase 会话逻辑。
+//   运营后台 —— `/admin`，同样要求登录；「是不是管理员」不在这判断，
+//     真正的门禁在每个 admin_* RPC 里的 is_admin 硬校验（前端守卫只是体验层）。
+// 为不给公开静态页平添一次认证往返（影响首屏/SEO），只有这几类路径才走 Supabase 会话逻辑。
 import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 
@@ -13,10 +15,11 @@ const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? '';
 export async function middleware(request: NextRequest) {
   const path = request.nextUrl.pathname;
   const isApp = path === '/app' || path.startsWith('/app/');
+  const isAdmin = path === '/admin' || path.startsWith('/admin/');
   const isLogin = path === '/login';
 
   // 公开页直接放行——不触发会话刷新，落地页/博客保持纯静态、零认证延迟。
-  if (!isApp && !isLogin) {
+  if (!isApp && !isAdmin && !isLogin) {
     return NextResponse.next();
   }
 
@@ -43,8 +46,8 @@ export async function middleware(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  // 未登录进产品区 → 去登录页。
-  if (!user && isApp) {
+  // 未登录进产品区 / 运营后台 → 去登录页。
+  if (!user && (isApp || isAdmin)) {
     const redirectUrl = request.nextUrl.clone();
     redirectUrl.pathname = '/login';
     return NextResponse.redirect(redirectUrl);
