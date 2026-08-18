@@ -39,6 +39,20 @@ create policy "own progress" on public.reading_progress
 > 未执行此迁移时，断点写读会静默失败（不影响阅读 / 问 AI / 提问记录）。
 > 网页↔网页断点执行后即生效；**手机→电脑**还需 App 端也写这张表（独立任务）。
 
+## 重新生成单元（生成不完善时的补救）
+
+单元阅读页底部有「重新生成」入口；生成的流在写完前断掉（只出来一部分）时，
+正文顶部还会多一条明确提示。二次确认后 AI 重写本单元、覆盖旧内容，
+**重新扣一次 `cost_unit_generation`（默认 10）积分**，生成失败不扣。
+
+扣费口径：首次生成由 `ai-task` 内部按 `idem=<unit_id>` 扣（《终版》§6），
+同一单元再次生成会命中服务端幂等而不扣，所以重生成这一次由网页端按
+「生成前后余额」判断后补一笔 `spend_credits(cost,'unit_generation','regen:<unit_id>:<uuid>')`。
+服务端若自己扣了，前端就不会再扣 —— 两边都扣或都不扣都不会发生。
+
+> 依赖《终版》§3.3 已有的 `grant execute on function public.spend_credits(int,text,text) to authenticated`，
+> 无新增表 / 新增 SQL。若这条 grant 不在，重新生成仍能用，只是不会扣积分（控制台留 warn）。
+
 ## 技术栈
 
 Next.js（App Router）· @supabase/ssr · react-markdown · 通义千问（经 App 的 `ai-task`

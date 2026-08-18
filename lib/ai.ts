@@ -105,6 +105,9 @@ export type GenStreamResult = {
   blocks: ContentBlock[];
   error: string | null;
   exhausted?: CreditsExhausted;
+  // 流在收到末行 {"done":true} 前就断了,但已经收到若干块 —— 内容多半只写了一半。
+  // 调用方据此提示「这一单元可能没写完」并给出重新生成入口(不当成彻底失败,已有内容仍可读)。
+  truncated?: boolean;
 };
 
 /** 生成单元内容（task='gen_unit', stream=true）。边收边回调 onBlock 逐块渲染。 */
@@ -168,12 +171,16 @@ export async function genUnitStream(
         } else if (obj.error) {
           return { blocks, error: obj.error };
         } else if (obj.done) {
-          return { blocks, error: null };
+          return { blocks, error: null, truncated: false };
         }
       }
     }
-    // 流自然结束但没收到 done：有块算成功，无块算失败。
-    return { blocks, error: blocks.length > 0 ? null : GEN_FALLBACK };
+    // 流自然结束但没收到 done：有块算成功（标记 truncated，多半只写了一半），无块算失败。
+    return {
+      blocks,
+      error: blocks.length > 0 ? null : GEN_FALLBACK,
+      truncated: blocks.length > 0,
+    };
   } catch {
     return { blocks, error: GEN_FALLBACK };
   }

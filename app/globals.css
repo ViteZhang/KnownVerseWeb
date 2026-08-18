@@ -291,6 +291,22 @@ a{color:inherit;text-decoration:none}
 .genwrap h3{font-family:var(--font-read);font-size:19px;font-weight:600;margin-bottom:12px}
 .genwrap p{font-size:13.5px;color:var(--ink-soft);line-height:1.7;max-width:340px}
 .genwrap .retry{margin-top:18px}
+.gen-freenote{margin-top:10px;font-size:11.5px;color:var(--ink-faint)}
+
+/* 生成不完整（流中途断了）提示 + 重新生成入口 */
+.gen-warn{margin-top:20px;background:var(--amber-wash);border:1px solid var(--amber-line);border-radius:14px;padding:14px 16px}
+.gen-warn .gw-t{font-size:13.5px;font-weight:700;color:var(--amber-deep)}
+.gen-warn .gw-d{font-size:12.5px;color:var(--ink-soft);line-height:1.7;margin:6px 0 12px}
+.regen-btn{display:inline-flex;align-items:center;gap:7px;margin-left:auto}
+.regen-btn svg{width:15px;height:15px;stroke:var(--ink-soft);fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.regen-btn:hover:not(:disabled) svg{stroke:var(--amber-deep)}
+.regen-btn:disabled{opacity:.45;cursor:default}
+.regen-btn:disabled:hover{border-color:var(--line);color:var(--ink)}
+.regen-btn .rg-cost{font-size:11px;font-weight:700;color:var(--amber-deep);background:var(--amber-wash);border-radius:999px;padding:1px 7px}
+/* 确认框主行动按钮（非危险动作版，与 .confirm-del 同版式） */
+.confirm-go{width:100%;margin-top:20px;background:var(--ink);color:#fff;border:none;border-radius:13px;padding:13px;font-size:14px;font-weight:600;cursor:pointer;transition:.15s}
+.confirm-go:hover{transform:translateY(-1px);box-shadow:var(--shadow)}
+.confirm-go:disabled{opacity:.55;cursor:default;transform:none;box-shadow:none}
 
 /* ============ READING · 移动端 H5 适配 ============ */
 /* 桌面为「左轨道 + 正文 + 右目录」三栏；窄屏塌成单栏，两侧栏隐藏，
@@ -309,13 +325,59 @@ a{color:inherit;text-decoration:none}
   .drawer{width:100%;max-width:100%}
 }
 
-/* ============ APPBAR · 移动端收紧（防横向溢出）============ */
-@media(max-width:640px){
-  .appbar{gap:10px;padding:14px 16px 12px}
-  .appbar .word{font-size:19px}
-  .appbar nav{margin-left:0;gap:2px}
-  .appbar nav a{padding:6px 9px;font-size:13px}
+/* ============ 产品区 · 移动端 H5 适配（防横向溢出）============ */
+/* 兜底：任何一处算错宽度也不该让整页能横向拖动。用 clip 而不是 hidden ——
+   hidden 会把 body 变成滚动容器，阅读页左轨道/右目录的 sticky 会失效。 */
+body{overflow-x:clip}
+
+/* appbar 原为不换行单行：品牌 + 导航 + 积分芯片 + 头像在窄屏互相挤压，
+   三个导航项时整行溢出到视口右侧（页面被拖出一截白边）。
+   窄屏改成两行：第一行品牌 / 积分 / 头像，第二行导航（可横滑，不再逐字折行）。 */
+@media(max-width:720px){
+  .app{max-width:100%}
+  .appbar{flex-wrap:wrap;gap:8px 10px;padding:14px 16px 10px}
+  .appbar .word{flex:none;white-space:nowrap;font-size:19px}
+  .appbar nav{order:1;width:100%;margin-left:0;gap:4px;overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none}
+  .appbar nav::-webkit-scrollbar{display:none}
+  .appbar nav a{flex:none;white-space:nowrap;padding:6px 10px;font-size:13px}
+  .credit-chip{flex:none}
   .appbar .avatar{width:34px;height:34px;font-size:14px}
+
+  /* 各页左右留白从 28px 收到 16px：窄屏正文宽度不被吃掉 */
+  .home-wrap{padding:4px 16px 48px}
+  .path-grid{padding:4px 16px 48px;gap:18px}
+  .qlog-wrap,.inv-wrap,.cf-wrap,.mm-wrap{padding:4px 16px 48px}
+  .ns-wrap{padding:28px 16px 48px}
+  .iv-wrap{padding:4px 16px 32px}
+  .rp-wrap{padding:4px 16px 48px;gap:18px}
+  .pane{padding:20px 16px 32px}
+  .ledger{padding:18px 16px 32px}
+  .foot-note{padding:0 16px}
+}
+@media(max-width:380px){.credit-chip .cc-u{display:none}}
+
+/* 我的空间 / 路径页在小屏的收紧 */
+@media(max-width:560px){
+  .home-hd{display:block}
+  .home-hd .greet{font-size:21px}
+  .section-label{padding:20px 2px 12px}
+  /* 签到条原来靠 ci-tx 的 min-width:150px 撑着，小屏会顶破卡片右边 */
+  .checkin{flex-wrap:wrap;gap:10px 12px;padding:12px 14px}
+  .checkin .ci-tx{flex:1 1 140px;min-width:0}
+  .checkin .ci-btn{padding:9px 16px;margin-left:auto}
+  .space-card{padding:16px;border-radius:16px}
+  .space-card .row1{gap:8px}
+  .space-card .nm{font-size:16px;min-width:0;overflow-wrap:anywhere}
+  .newspace{min-height:132px}
+  .path-head h1{font-size:24px}
+  .units{padding-left:22px}
+  .unit::before{left:-22px}
+  .unit{padding:13px 14px}
+  .phase-h .pt{font-size:14px}
+  /* 阅读页底部动作在窄屏换行，「重新生成」不再被挤出右边 */
+  .rd-actions{flex-wrap:wrap;gap:10px;margin-top:34px}
+  .rd-actions .primary{padding:12px 16px}
+  .regen-btn{margin-left:0}
 }
 
 /* ============ QUESTION LOG ============ */

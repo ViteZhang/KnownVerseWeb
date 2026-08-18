@@ -73,6 +73,28 @@ export async function spendSpaceCreation(idem: string): Promise<SpendResult> {
   }
 }
 
+// 通用扣费(§3.3 spend_credits,已 grant 给 authenticated)。
+// 目前只用于「重新生成单元」:首次生成由 ai-task 内部按 idem=<unit_id> 扣,
+// 同一单元再生成会命中幂等不再扣 —— 重生成的那一次由前端补一笔新 idem 的扣费,
+// 保证「重新生成 = 重新花积分」。p_idem 用一次性 uuid,网络重试不会重扣。
+export async function spendCredits(
+  cost: number,
+  reason: string,
+  idem: string,
+): Promise<SpendResult> {
+  try {
+    const { data, error } = await getSupabase().rpc('spend_credits', {
+      p_cost: cost,
+      p_reason: reason,
+      p_idem: idem,
+    });
+    if (error || !data) return { ok: false, reason: 'network' };
+    return { ok: Boolean(data.ok), balance: data.balance, reason: data.reason, needed: data.needed };
+  } catch {
+    return { ok: false, reason: 'network' };
+  }
+}
+
 // 积分流水(§8⑤)。倒序;RLS 只返回本人。
 export type LedgerRow = {
   id: number;

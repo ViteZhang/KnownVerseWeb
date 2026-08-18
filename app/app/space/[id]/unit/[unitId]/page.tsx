@@ -6,6 +6,8 @@ import { AskDrawer, type SaveStatus } from '@/components/ask-drawer';
 import { ReadingBlocks, headingsOf } from '@/components/reading-blocks';
 import { usePaywall } from '@/components/paywall/paywall-provider';
 import { askAI, genUnitStream } from '@/lib/ai';
+import { BILLING_FALLBACK, getBillingConfigPublic } from '@/lib/billing';
+import { getCreditStatus, spendCredits } from '@/lib/credits';
 import {
   DEFAULT_PREFS,
   fetchReadingPrefs,
@@ -41,6 +43,24 @@ export default function UnitPage({
   const [genError, setGenError] = useState<string | null>(null);
   const [persistWarn, setPersistWarn] = useState(false);
 
+  // ── 重新生成本单元（生成不完善时的补救）────────────────────────────
+  // regenMode：本次生成是不是「重新生成」（影响文案与扣费）。
+  // truncated：流没收到结束标记就断了 —— 内容多半只写了一半，明确提示可重生成。
+  const [regenMode, setRegenMode] = useState(false);
+  const [regenOpen, setRegenOpen] = useState(false);
+  const [truncated, setTruncated] = useState(false);
+  const [genCost, setGenCost] = useState(BILLING_FALLBACK.cost_unit_generation);
+  // 价签同时存一份 ref：runGeneration 只读它，价签异步到货时不会改变回调身份、
+  // 从而不会连累 load 的依赖、触发第二次自动生成。
+  const genCostRef = useRef(genCost);
+  useEffect(() => {
+    // 单元生成价签只从 billing_config_public 取（§2：数字不写死在前端）。
+    getBillingConfigPublic().then((c) => {
+      setGenCost(c.cost_unit_generation);
+      genCostRef.current = c.cost_unit_generation;
+    });
+  }, []);
+
   const [railCollapsed, setRailCollapsed] = useState(false);
   const [tocCur, setTocCur] = useState<string | null>(null);
 
@@ -71,6 +91,8 @@ export default function UnitPage({
 
   const readingRef = useRef<HTMLDivElement>(null);
   const restoredRef = useRef(false);
+  // 生成互斥锁：自动生成与「重新生成」不会撞在一起，也挡住按钮连点。
+  const genBusyRef = useRef(false);
 
   const blocks = useMemo(() => unit?.content ?? [], [unit?.content]);
   const headings = useMemo(() => headingsOf(blocks), [blocks]);
@@ -89,42 +111,91 @@ export default function UnitPage({
     [orderedUnits, unitId],
   );
 
-  // ── 生成单元内容（未生成时）：流式逐块渲染，收齐后一次性固化 ──────────
-  const runGeneration = useCallback(async (u: Unit) => {
-    setGenerating(true);
-    setGenError(null);
-    setPersistWarn(false);
-    // 起手先清空该单元内容，避免旧块残留；随后每收到一块就追加渲染。
-    setUnit((prev) =>
-      prev && prev.id === u.id ? { ...prev, content: [], status: 'learning' } : prev,
-    );
-    const r = await genUnitStream(u.space_id, u.id, (block) => {
+  // ── 生成单元内容：流式逐块渲染，收齐后一次性固化 ──────────────────
+  // charge=true 表示这是「重新生成」：首次生成由 ai-task 内部按 idem=<unit_id> 扣费，
+  // 同一单元再生成会命中服务端幂等而不扣，所以重生成这一次的积分由前端补扣（§6）。
+  // 扣费放在生成成功之后：生成失败不该让用户白花积分（前端拿不到退款口）。
+  const runGeneration = useCallback(
+    async (u: Unit, opts?: { charge?: boolean }) => {
+      if (genBusyRef.current) return; // 已有一次生成在跑：不重复开流、不重复扣费
+      const charge = opts?.charge === true;
+      const cost = genCostRef.current;
+      // 重生成一个已学完的单元，不该把「已完成」打回「学习中」。
+      const keepStatus = u.status === 'done' ? 'done' : 'learning';
+      genBusyRef.current = true;
+      setGenerating(true);
+      setRegenMode(charge);
+      setGenError(null);
+      setPersistWarn(false);
+      setTruncated(false);
+
+      // 重新生成：先看余额够不够，不够直接弹积分墙，不白跑一趟 LLM。
+      let balanceBefore: number | null = null;
+      if (charge) {
+        const st = await getCreditStatus();
+        balanceBefore = st?.balance ?? null;
+        if (st && st.balance < cost) {
+          genBusyRef.current = false;
+          setGenerating(false);
+          setRegenMode(false);
+          openCreditWall({ balance: st.balance, needed: cost });
+          return;
+        }
+      }
+
+      // 起手先清空该单元内容，避免旧块残留；随后每收到一块就追加渲染。
+      setUnit((prev) =>
+        prev && prev.id === u.id ? { ...prev, content: [], status: keepStatus } : prev,
+      );
+      const r = await genUnitStream(u.space_id, u.id, (block) => {
+        setUnit((prev) =>
+          prev && prev.id === u.id
+            ? { ...prev, content: [...(prev.content ?? []), block] }
+            : prev,
+        );
+      });
+      genBusyRef.current = false;
+      setGenerating(false);
+      setRegenMode(false);
+      if (r.exhausted) {
+        openCreditWall(r.exhausted); // 积分不足 → 弹积分墙
+        setGenError(r.error ?? '本月积分已用完。');
+        return;
+      }
+      if (r.error !== null || r.blocks.length === 0) {
+        setGenError(r.error ?? '内容生成失败，请稍后重试。');
+        return;
+      }
+      // 以收齐的完整块数组为准回填 + 固化（防止流式过程中的状态竞态）。
       setUnit((prev) =>
         prev && prev.id === u.id
-          ? { ...prev, content: [...(prev.content ?? []), block] }
+          ? { ...prev, content: r.blocks, status: keepStatus }
           : prev,
       );
-    });
-    setGenerating(false);
-    if (r.exhausted) {
-      openCreditWall(r.exhausted); // 积分不足 → 弹积分墙
-      setGenError(r.error ?? '本月积分已用完。');
-      return;
-    }
-    if (r.error !== null || r.blocks.length === 0) {
-      setGenError(r.error ?? '内容生成失败，请稍后重试。');
-      return;
-    }
-    // 以收齐的完整块数组为准回填 + 固化（防止流式过程中的状态竞态）。
-    setUnit((prev) =>
-      prev && prev.id === u.id
-        ? { ...prev, content: r.blocks, status: 'learning' }
-        : prev,
-    );
-    refreshCredits(); // 扣费成功 → 刷新余额条
-    const p = await persistUnitContent(u.id, r.blocks);
-    setPersistWarn(!p.ok);
-  }, [openCreditWall, refreshCredits]);
+      setTruncated(Boolean(r.truncated));
+
+      if (charge) {
+        // 服务端到底扣没扣，用「生成前后余额」判断：没扣（幂等命中）才由前端补一笔，
+        // 两边都扣不会发生，两边都不扣也不会发生。
+        const after = await getCreditStatus();
+        const serverCharged =
+          balanceBefore !== null && after !== null && after.balance < balanceBefore;
+        if (!serverCharged) {
+          const sp = await spendCredits(
+            cost,
+            'unit_generation',
+            `regen:${u.id}:${crypto.randomUUID()}`,
+          );
+          // 扣不上（网络/权限）不拦着用户读已生成的内容，只留一行排查线索。
+          if (!sp.ok) console.warn('[unit] 重新生成补扣积分失败:', sp.reason);
+        }
+      }
+      refreshCredits(); // 扣费落账 → 刷新余额条
+      const p = await persistUnitContent(u.id, r.blocks, keepStatus);
+      setPersistWarn(!p.ok);
+    },
+    [openCreditWall, refreshCredits],
+  );
 
   // ── 加载单元 + 路径 ───────────────────────────────────────────────
   const load = useCallback(async () => {
@@ -425,9 +496,11 @@ export default function UnitPage({
           ) : generating && blocks.length === 0 ? (
             <div className="genwrap">
               <div className="ring" />
-              <h3>正在为你生成这一单元…</h3>
+              <h3>{regenMode ? '正在重新生成这一单元…' : '正在为你生成这一单元…'}</h3>
               <p>
-                AI 正结合你的学习档案按内容模板撰写本单元。内容会边写边显示，生成后永久保存，下次直接打开。
+                {regenMode
+                  ? `AI 正重写本单元，写完会覆盖旧内容。这一次会扣 ${genCost} 积分；万一生成失败，不扣。`
+                  : 'AI 正结合你的学习档案按内容模板撰写本单元。内容会边写边显示，生成后永久保存，下次直接打开。'}
               </p>
             </div>
           ) : genError ? (
@@ -440,6 +513,7 @@ export default function UnitPage({
               >
                 点此重试
               </button>
+              <div className="gen-freenote">重试失败的生成不额外扣积分。</div>
             </div>
           ) : (
             unit && (
@@ -467,6 +541,19 @@ export default function UnitPage({
                 {persistWarn && (
                   <div className="savenote failed" style={{ marginTop: 12 }}>
                     内容已生成可阅读，但未能存入云端；下次进入会重新生成。
+                  </div>
+                )}
+
+                {truncated && !generating && (
+                  <div className="gen-warn">
+                    <div className="gw-t">这一单元可能没写完</div>
+                    <div className="gw-d">
+                      内容在中途断了，下面只是已经写出来的部分。可以重新生成一次，
+                      重写会覆盖当前内容并扣 {genCost} 积分。
+                    </div>
+                    <button className="ghost" onClick={() => setRegenOpen(true)}>
+                      重新生成本单元
+                    </button>
                   </div>
                 )}
 
@@ -508,6 +595,20 @@ export default function UnitPage({
                       下一单元 →
                     </button>
                   )}
+                  {/* 生成得不完整时的兜底：重写本单元，重新扣积分。 */}
+                  <button
+                    className="ghost regen-btn"
+                    disabled={generating || blocks.length === 0}
+                    onClick={() => setRegenOpen(true)}
+                    title={`重新生成本单元（−${genCost} 积分）`}
+                  >
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                      <path d="M20 11a8 8 0 1 0-2.3 5.7" />
+                      <path d="M20 5v6h-6" />
+                    </svg>
+                    重新生成
+                    <span className="rg-cost">−{genCost}</span>
+                  </button>
                 </div>
               </div>
             )
@@ -547,6 +648,32 @@ export default function UnitPage({
         </svg>
         问 AI
       </div>
+
+      {/* 重新生成二次确认：明确「覆盖旧内容 + 重新扣积分」 */}
+      {regenOpen && (
+        <div className="confirm-wrap">
+          <div className="confirm-scrim" onClick={() => setRegenOpen(false)} />
+          <div className="confirm-card" role="dialog" aria-modal="true">
+            <h3>重新生成这一单元?</h3>
+            <p>
+              AI 会把本单元重写一遍，<b>覆盖当前内容</b>（旧内容不保留），并
+              <b>重新扣 {genCost} 积分</b>。生成失败不扣。本单元的提问记录、学习进度不受影响。
+            </p>
+            <button
+              className="confirm-go"
+              onClick={() => {
+                setRegenOpen(false);
+                if (unit) void runGeneration(unit, { charge: true });
+              }}
+            >
+              重新生成（−{genCost} 积分）
+            </button>
+            <button className="confirm-cancel" onClick={() => setRegenOpen(false)}>
+              取消
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* 右侧问 AI 抽屉 */}
       <AskDrawer

@@ -74,12 +74,12 @@ export function Appbar({
         </Link>
         {spaceId && (
           <>
-            <Link className={cur === 'path' ? 'cur' : ''} href={`/space/${spaceId}`}>
+            <Link className={cur === 'path' ? 'cur' : ''} href={`/app/space/${spaceId}`}>
               学习路径
             </Link>
             <Link
               className={cur === 'qlog' ? 'cur' : ''}
-              href={`/space/${spaceId}/questions`}
+              href={`/app/space/${spaceId}/questions`}
             >
               提问记录
             </Link>

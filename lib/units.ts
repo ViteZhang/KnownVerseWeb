@@ -22,14 +22,16 @@ export async function fetchUnitById(id: string): Promise<FetchUnitResult> {
 /**
  * 把生成出的块数组写回 units 并标记 learning。失败静默重试一次。
  * 因「一次生成、永久固化」，两端看到同一份，天然同步。
+ * status 可覆写：重新生成一个已学完的单元时传 'done'，不把学习进度打回去。
  */
 export async function persistUnitContent(
   unitId: string,
   content: ContentBlock[],
+  status: Unit['status'] = 'learning',
 ): Promise<{ ok: boolean; error: string | null }> {
   const row = {
     content,
-    status: 'learning',
+    status,
     generated_at: new Date().toISOString(),
   };
   const supabase = getSupabase();
