@@ -73,25 +73,54 @@ export async function spendSpaceCreation(idem: string): Promise<SpendResult> {
   }
 }
 
-// 通用扣费(§3.3 spend_credits,已 grant 给 authenticated)。
-// 目前只用于「重新生成单元」:首次生成由 ai-task 内部按 idem=<unit_id> 扣,
-// 同一单元再生成会命中幂等不再扣 —— 重生成的那一次由前端补一笔新 idem 的扣费,
-// 保证「重新生成 = 重新花积分」。p_idem 用一次性 uuid,网络重试不会重扣。
-export async function spendCredits(
-  cost: number,
-  reason: string,
+// 单元(重)生成扣费。线上库的口径与《终版》文档并不一致,实测(PostgREST 报的签名):
+//   - 没有文档里的 spend_credits(p_cost,p_reason,p_idem);
+//   - 有一个 spend_credits(p_user,p_cost,p_reason,p_idem) —— 要显式传用户 id;
+//   - 建空间走的是 spend_space_creation(p_idem) 这种「服务端 auth.uid() 认人」的安全包装。
+// 所以这里先调同款安全包装 spend_unit_generation(p_idem)(按 README 的 SQL 建好后自动走这条),
+// 函数不存在再回落到现有的 4 参数 spend_credits。两条路用同一把 p_idem,幂等,不会重复扣。
+//
+// 首次生成由 ai-task 内部按 idem=<unit_id> 扣;重新生成用新钥匙,故会真扣一次。
+export async function spendUnitGeneration(
   idem: string,
+  cost: number,
 ): Promise<SpendResult> {
+  const shape = (d: {
+    ok?: boolean;
+    balance?: number;
+    reason?: string;
+    needed?: number;
+  }): SpendResult => ({
+    ok: Boolean(d.ok),
+    balance: d.balance,
+    reason: d.reason,
+    needed: d.needed,
+  });
+  const missing = (e: { code?: string; message?: string }) =>
+    e.code === 'PGRST202' || (e.message ?? '').includes('Could not find the function');
+
+  const sb = getSupabase();
   try {
-    const { data, error } = await getSupabase().rpc('spend_credits', {
+    // ① 安全包装(推荐):服务端自己认人,前端连用户 id 都不用碰。
+    const { data, error } = await sb.rpc('spend_unit_generation', { p_idem: idem });
+    if (!error && data) return shape(data);
+    if (error && !missing(error)) return { ok: false, reason: error.message || 'rpc_error' };
+
+    // ② 回落:线上现有的 4 参数版,必须带上自己的 user id。
+    const {
+      data: { user },
+    } = await sb.auth.getUser();
+    if (!user) return { ok: false, reason: 'not_authenticated' };
+    const r = await sb.rpc('spend_credits', {
+      p_user: user.id,
       p_cost: cost,
-      p_reason: reason,
+      p_reason: 'unit_generation',
       p_idem: idem,
     });
-    // 原因原样带出（函数不存在 / 未授权 / 网络都要能区分），排查扣费问题只能靠它。
-    if (error) return { ok: false, reason: error.message || 'rpc_error' };
-    if (!data) return { ok: false, reason: 'empty_response' };
-    return { ok: Boolean(data.ok), balance: data.balance, reason: data.reason, needed: data.needed };
+    // 原因原样带出(函数不存在 / 未授权 / 网络都要能区分),排查扣费问题只能靠它。
+    if (r.error) return { ok: false, reason: r.error.message || 'rpc_error' };
+    if (!r.data) return { ok: false, reason: 'empty_response' };
+    return shape(r.data);
   } catch (e) {
     return { ok: false, reason: e instanceof Error ? e.message : 'network' };
   }

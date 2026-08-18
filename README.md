@@ -56,16 +56,62 @@ create policy "own progress" on public.reading_progress
 `idempotent_replay` 直接返回 ok；服务端没扣，前端这一笔就是真正的扣费。
 扣费在生成成功、内容固化之后，生成失败不扣。
 
-> 依赖《终版》§3.3 的 `grant execute on function public.spend_credits(int,text,text) to authenticated`。
-> **如果重新生成后「积分流水」里没有「生成学习单元 −10」这一笔**，说明线上库缺这条授权
-> （或函数签名不一致）—— 页面会在正文顶部直接显示原因（如 `permission denied for function spend_credits`），
-> 在 Supabase SQL Editor 补一句即可：
->
-> ```sql
-> grant execute on function public.spend_credits(int,text,text) to authenticated;
-> ```
->
-> 补之前重新生成仍然可用，只是不扣积分。
+### 线上库的实际扣费口径（与《终版》文档不一致，实测）
+
+用 PostgREST 探到的真实签名：
+
+| 函数 | 线上实际 | 文档写的 |
+|---|---|---|
+| `spend_space_creation(p_idem)` | 有，服务端 `auth.uid()` 认人 | 文档里叫 `create_space_with_credits` |
+| `spend_credits(p_user,p_cost,p_reason,p_idem)` | 有，**要显式传用户 id** | `spend_credits(p_cost,p_reason,p_idem)` |
+| `spend_unit_generation(p_idem)` | **没有** | — |
+
+所以 `lib/credits.ts` 的 `spendUnitGeneration()` 先试安全包装 `spend_unit_generation(p_idem)`，
+函数不存在再回落到现有的 4 参数 `spend_credits`。两条路用同一把 `p_idem`，幂等，不会重复扣。
+**不跑任何 SQL 也能正常扣费**（走回落）。
+
+### 建议在 Supabase 补的 SQL（安全收口，可选但强烈建议）
+
+线上的 `spend_credits` 带 `p_user` 参数，且 EXECUTE 仍留在 `PUBLIC` 上——
+**拿公开 anon key 就能替任意用户扣积分**（无需登录）。建议一次性做两件事：
+建一个和 `spend_space_creation` 同款的安全包装，然后把通用扣费口收回给 service_role。
+
+```sql
+-- ① 单元(重)生成的安全扣费口：服务端 auth.uid() 认人，前端不碰 user id
+create or replace function public.spend_unit_generation(p_idem text)
+returns jsonb language plpgsql security definer set search_path = public as $$
+declare v_user uuid := auth.uid(); v_cost int;
+begin
+  if v_user is null then
+    return jsonb_build_object('ok', false, 'reason', 'not_authenticated');
+  end if;
+  select cost_unit_generation into v_cost from public.billing_config where id = true;
+  return public.spend_credits(v_user, coalesce(v_cost, 10), 'unit_generation', p_idem);
+end $$;
+revoke all on function public.spend_unit_generation(text) from public;
+grant execute on function public.spend_unit_generation(text) to authenticated;
+
+-- ② 通用扣费口只留给 service_role（签名可能有多个重载，按 oid 逐个收）
+do $$
+declare r record;
+begin
+  for r in select oid::regprocedure as sig from pg_proc
+            where pronamespace = 'public'::regnamespace and proname = 'spend_credits'
+  loop
+    execute format('revoke all on function %s from public, anon, authenticated', r.sig);
+    execute format('grant execute on function %s to service_role', r.sig);
+  end loop;
+end $$;
+```
+
+> ② 之前先确认 `ai-task` Edge Function 是以 service role 调 `spend_credits` 的
+> （它要写 `credit_ledger` / `llm_usage`，通常都是）。若它用的是用户 JWT，
+> 就把 `authenticated` 保留在授权名单里，只收回 `public, anon`。
+> ①②都跑完后，网页端会自动改走安全包装，无需再发版。
+
+**如果重新生成后「积分流水」里仍没有「生成学习单元 −10」**，阅读页正文顶部会直接显示失败原因
+（如 `Could not find the function …` / `permission denied …`），照着原因处理即可；
+扣不上也不影响已生成内容的保存。
 
 ## 技术栈
 

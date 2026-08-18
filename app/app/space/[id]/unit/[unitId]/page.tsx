@@ -7,7 +7,7 @@ import { ReadingBlocks, headingsOf } from '@/components/reading-blocks';
 import { usePaywall } from '@/components/paywall/paywall-provider';
 import { askAI, genUnitStream } from '@/lib/ai';
 import { BILLING_FALLBACK, getBillingConfigPublic } from '@/lib/billing';
-import { getCreditStatus, spendCredits } from '@/lib/credits';
+import { getCreditStatus, spendUnitGeneration } from '@/lib/credits';
 import {
   DEFAULT_PREFS,
   fetchReadingPrefs,
@@ -198,7 +198,7 @@ export default function UnitPage({
         // 用同一把 idem 补扣：服务端若认了 idemKey 已经扣过，这里会命中幂等
         // （spend_credits 返回 ok + idempotent_replay），不会重复扣。
         try {
-          const sp = await spendCredits(cost, 'unit_generation', idem);
+          const sp = await spendUnitGeneration(idem, cost);
           if (!sp.ok) {
             if (sp.reason === 'insufficient_credits') {
               openCreditWall({ balance: sp.balance ?? 0, needed: sp.needed ?? cost });
