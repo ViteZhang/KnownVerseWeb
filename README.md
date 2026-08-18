@@ -46,12 +46,26 @@ create policy "own progress" on public.reading_progress
 **重新扣一次 `cost_unit_generation`（默认 10）积分**，生成失败不扣。
 
 扣费口径：首次生成由 `ai-task` 内部按 `idem=<unit_id>` 扣（《终版》§6），
-同一单元再次生成会命中服务端幂等而不扣，所以重生成这一次由网页端按
-「生成前后余额」判断后补一笔 `spend_credits(cost,'unit_generation','regen:<unit_id>:<uuid>')`。
-服务端若自己扣了，前端就不会再扣 —— 两边都扣或都不扣都不会发生。
+同一单元再次生成会命中服务端幂等而不扣。所以重生成时网页端生成一把新钥匙
+`regen:<unit_id>:<uuid>`，**同时**交给两边：
 
-> 依赖《终版》§3.3 已有的 `grant execute on function public.spend_credits(int,text,text) to authenticated`，
-> 无新增表 / 新增 SQL。若这条 grant 不在，重新生成仍能用，只是不会扣积分（控制台留 warn）。
+1. 随 `gen_unit` 请求体发 `idemKey` —— 服务端认这个字段就由它扣；
+2. 生成成功后前端再调一次 `spend_credits(cost,'unit_generation',<同一把钥匙>)`。
+
+两边用同一把幂等钥匙，所以**最多扣一次**：服务端扣过了，前端这次会命中
+`idempotent_replay` 直接返回 ok；服务端没扣，前端这一笔就是真正的扣费。
+扣费在生成成功、内容固化之后，生成失败不扣。
+
+> 依赖《终版》§3.3 的 `grant execute on function public.spend_credits(int,text,text) to authenticated`。
+> **如果重新生成后「积分流水」里没有「生成学习单元 −10」这一笔**，说明线上库缺这条授权
+> （或函数签名不一致）—— 页面会在正文顶部直接显示原因（如 `permission denied for function spend_credits`），
+> 在 Supabase SQL Editor 补一句即可：
+>
+> ```sql
+> grant execute on function public.spend_credits(int,text,text) to authenticated;
+> ```
+>
+> 补之前重新生成仍然可用，只是不扣积分。
 
 ## 技术栈
 

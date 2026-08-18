@@ -25,6 +25,13 @@ import {
 import { fetchUnitById, persistUnitContent } from '@/lib/units';
 import type { ContentBlock, PhaseWithUnits, Unit } from '@/lib/types';
 
+// 幂等钥匙后缀：老 webview 里 crypto.randomUUID 可能不存在，退回时间戳 + 随机数。
+function newIdemSuffix(): string {
+  const c = typeof crypto !== 'undefined' ? crypto : undefined;
+  if (c && typeof c.randomUUID === 'function') return c.randomUUID();
+  return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+}
+
 export default function UnitPage({
   params,
 }: {
@@ -49,6 +56,8 @@ export default function UnitPage({
   const [regenMode, setRegenMode] = useState(false);
   const [regenOpen, setRegenOpen] = useState(false);
   const [truncated, setTruncated] = useState(false);
+  // 重新生成该扣的积分没扣上时的实话提示（含服务端原因，便于定位）。
+  const [chargeNote, setChargeNote] = useState<string | null>(null);
   const [genCost, setGenCost] = useState(BILLING_FALLBACK.cost_unit_generation);
   // 价签同时存一份 ref：runGeneration 只读它，价签异步到货时不会改变回调身份、
   // 从而不会连累 load 的依赖、触发第二次自动生成。
@@ -128,12 +137,11 @@ export default function UnitPage({
       setGenError(null);
       setPersistWarn(false);
       setTruncated(false);
+      setChargeNote(null);
 
       // 重新生成：先看余额够不够，不够直接弹积分墙，不白跑一趟 LLM。
-      let balanceBefore: number | null = null;
       if (charge) {
         const st = await getCreditStatus();
-        balanceBefore = st?.balance ?? null;
         if (st && st.balance < cost) {
           genBusyRef.current = false;
           setGenerating(false);
@@ -143,17 +151,25 @@ export default function UnitPage({
         }
       }
 
+      // 重新生成的幂等钥匙：一把钥匙同时交给服务端和前端补扣口 —— 谁扣都行，最多扣一次。
+      const idem = charge ? `regen:${u.id}:${newIdemSuffix()}` : undefined;
+
       // 起手先清空该单元内容，避免旧块残留；随后每收到一块就追加渲染。
       setUnit((prev) =>
         prev && prev.id === u.id ? { ...prev, content: [], status: keepStatus } : prev,
       );
-      const r = await genUnitStream(u.space_id, u.id, (block) => {
-        setUnit((prev) =>
-          prev && prev.id === u.id
-            ? { ...prev, content: [...(prev.content ?? []), block] }
-            : prev,
-        );
-      });
+      const r = await genUnitStream(
+        u.space_id,
+        u.id,
+        (block) => {
+          setUnit((prev) =>
+            prev && prev.id === u.id
+              ? { ...prev, content: [...(prev.content ?? []), block] }
+              : prev,
+          );
+        },
+        idem,
+      );
       genBusyRef.current = false;
       setGenerating(false);
       setRegenMode(false);
@@ -174,25 +190,31 @@ export default function UnitPage({
       );
       setTruncated(Boolean(r.truncated));
 
-      if (charge) {
-        // 服务端到底扣没扣，用「生成前后余额」判断：没扣（幂等命中）才由前端补一笔，
-        // 两边都扣不会发生，两边都不扣也不会发生。
-        const after = await getCreditStatus();
-        const serverCharged =
-          balanceBefore !== null && after !== null && after.balance < balanceBefore;
-        if (!serverCharged) {
-          const sp = await spendCredits(
-            cost,
-            'unit_generation',
-            `regen:${u.id}:${crypto.randomUUID()}`,
-          );
-          // 扣不上（网络/权限）不拦着用户读已生成的内容，只留一行排查线索。
-          if (!sp.ok) console.warn('[unit] 重新生成补扣积分失败:', sp.reason);
+      // 先把内容固化：扣费出任何岔子都不该连累已经写好的正文。
+      const p = await persistUnitContent(u.id, r.blocks, keepStatus);
+      setPersistWarn(!p.ok);
+
+      if (charge && idem) {
+        // 用同一把 idem 补扣：服务端若认了 idemKey 已经扣过，这里会命中幂等
+        // （spend_credits 返回 ok + idempotent_replay），不会重复扣。
+        try {
+          const sp = await spendCredits(cost, 'unit_generation', idem);
+          if (!sp.ok) {
+            if (sp.reason === 'insufficient_credits') {
+              openCreditWall({ balance: sp.balance ?? 0, needed: sp.needed ?? cost });
+            } else {
+              // 不拦着用户读已生成的内容，但要说实话：这次没扣成，并带上原因。
+              console.warn('[unit] 重新生成补扣积分失败:', sp.reason);
+              setChargeNote(sp.reason ?? '未知原因');
+            }
+          }
+        } catch (e) {
+          const msg = e instanceof Error ? e.message : '未知原因';
+          console.warn('[unit] 重新生成补扣积分异常:', msg);
+          setChargeNote(msg);
         }
       }
       refreshCredits(); // 扣费落账 → 刷新余额条
-      const p = await persistUnitContent(u.id, r.blocks, keepStatus);
-      setPersistWarn(!p.ok);
     },
     [openCreditWall, refreshCredits],
   );
@@ -541,6 +563,13 @@ export default function UnitPage({
                 {persistWarn && (
                   <div className="savenote failed" style={{ marginTop: 12 }}>
                     内容已生成可阅读，但未能存入云端；下次进入会重新生成。
+                  </div>
+                )}
+
+                {chargeNote && (
+                  <div className="savenote failed" style={{ marginTop: 12 }}>
+                    本次重新生成没能扣除积分（{chargeNote}）—— 内容照常保存，
+                    积分流水里不会有这一笔。
                   </div>
                 )}
 

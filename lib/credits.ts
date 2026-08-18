@@ -88,10 +88,12 @@ export async function spendCredits(
       p_reason: reason,
       p_idem: idem,
     });
-    if (error || !data) return { ok: false, reason: 'network' };
+    // 原因原样带出（函数不存在 / 未授权 / 网络都要能区分），排查扣费问题只能靠它。
+    if (error) return { ok: false, reason: error.message || 'rpc_error' };
+    if (!data) return { ok: false, reason: 'empty_response' };
     return { ok: Boolean(data.ok), balance: data.balance, reason: data.reason, needed: data.needed };
-  } catch {
-    return { ok: false, reason: 'network' };
+  } catch (e) {
+    return { ok: false, reason: e instanceof Error ? e.message : 'network' };
   }
 }
 

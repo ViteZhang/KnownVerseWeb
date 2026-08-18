@@ -84,22 +84,27 @@ a{color:inherit;text-decoration:none}
 .home-hd .greet small{display:block;font-family:var(--font-ui);font-size:13px;color:var(--ink-soft);font-weight:400;margin-top:7px}
 .section-label{font-size:11.5px;font-weight:600;letter-spacing:1.4px;color:var(--ink-faint);text-transform:uppercase;padding:26px 2px 14px}
 .grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+/* 网格项默认 min-width:auto = 自身 min-content；卡片里「继续 · <单元名>」那行是
+   nowrap + 省略号，min-content 会被撑到 340px 上下，窄屏下轨道跟着被顶宽、
+   卡片整体溢出到屏幕右侧（签到条是普通块所以不受影响，两者右边缘因此不齐）。
+   显式给 0，让轨道按可用宽度走、文案照设计省略号截断。 */
+.grid>*{min-width:0}
 @media(max-width:980px){.grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:660px){.grid{grid-template-columns:1fr}}
 .space-card{background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:18px 18px 16px;box-shadow:var(--shadow-sm);cursor:pointer;transition:.2s;display:flex;flex-direction:column;text-align:left}
 .space-card:hover{transform:translateY(-3px);box-shadow:var(--shadow)}
-.space-card .row1{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
-.space-card .nm{font-size:17px;font-weight:600;letter-spacing:.2px}
+.space-card .row1{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;min-width:0}
+.space-card .nm{font-size:17px;font-weight:600;letter-spacing:.2px;min-width:0;overflow-wrap:anywhere}
 .space-card .sub{font-size:12px;color:var(--ink-faint);margin-top:6px;line-height:1.5}
 .prog{display:flex;align-items:center;gap:10px;margin-top:16px}
 .bar{flex:1;height:6px;border-radius:99px;background:var(--line-soft);overflow:hidden}
 .bar i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,var(--amber),var(--amber-deep))}
 .prog .n{font-size:11.5px;color:var(--ink-faint);font-feature-settings:"tnum"}
-.resume{display:flex;align-items:center;gap:8px;margin-top:14px;padding-top:14px;border-top:1px dashed var(--line)}
+.resume{display:flex;align-items:center;gap:8px;margin-top:14px;padding-top:14px;border-top:1px dashed var(--line);min-width:0}
 .resume .dot{width:6px;height:6px;border-radius:50%;background:var(--amber);flex:none;box-shadow:0 0 0 4px var(--amber-wash)}
 .resume .txt{flex:1;min-width:0;font-size:12.5px;color:var(--ink-soft);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .resume .txt b{color:var(--ink);font-weight:600}
-.resume .go{margin-left:auto;font-size:12px;font-weight:600;color:var(--amber-deep);flex:none}
+.resume .go{margin-left:auto;font-size:12px;font-weight:600;color:var(--amber-deep);flex:none;white-space:nowrap}
 .newspace{border:1.5px dashed rgba(221,149,39,.4);border-radius:20px;padding:18px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:var(--ink-soft);font-size:14px;font-weight:500;cursor:default;transition:.18s;min-height:172px;background:transparent}
 .newspace:hover{border-color:var(--amber-line);border-style:solid;color:var(--amber-deep);transform:translateY(-2px);box-shadow:var(--shadow)}
 .newspace:hover .plus{background:var(--amber-wash)}
@@ -367,7 +372,7 @@ body{overflow-x:clip}
   .checkin .ci-btn{padding:9px 16px;margin-left:auto}
   .space-card{padding:16px;border-radius:16px}
   .space-card .row1{gap:8px}
-  .space-card .nm{font-size:16px;min-width:0;overflow-wrap:anywhere}
+  .space-card .nm{font-size:16px}
   .newspace{min-height:132px}
   .path-head h1{font-size:24px}
   .units{padding-left:22px}

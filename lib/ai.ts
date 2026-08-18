@@ -110,11 +110,15 @@ export type GenStreamResult = {
   truncated?: boolean;
 };
 
-/** 生成单元内容（task='gen_unit', stream=true）。边收边回调 onBlock 逐块渲染。 */
+/** 生成单元内容（task='gen_unit', stream=true）。边收边回调 onBlock 逐块渲染。
+ *  idemKey：重新生成时传一把新钥匙。服务端首次生成按 idem=<unit_id> 扣费，
+ *  同一单元再生成会命中幂等而不扣；带上新 idemKey，认这个字段的服务端就会重新扣一次。
+ *  不认也无妨 —— 调用方会用同一把钥匙在前端补扣，两边同钥匙最多扣一次。 */
 export async function genUnitStream(
   spaceId: string,
   unitId: string,
   onBlock: (block: ContentBlock) => void,
+  idemKey?: string,
 ): Promise<GenStreamResult> {
   const blocks: ContentBlock[] = [];
   try {
@@ -134,7 +138,13 @@ export async function genUnitStream(
         apikey: anonKey,
         ...(session ? { Authorization: `Bearer ${session.access_token}` } : {}),
       },
-      body: JSON.stringify({ task: 'gen_unit', stream: true, spaceId, unitId }),
+      body: JSON.stringify({
+        task: 'gen_unit',
+        stream: true,
+        spaceId,
+        unitId,
+        ...(idemKey ? { idemKey } : {}),
+      }),
     });
     // 积分不足：服务端在开流前回 402 JSON（非 NDJSON 流），据此弹积分墙（Slice 4）。
     if (resp.status === 402) {
