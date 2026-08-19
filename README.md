@@ -64,17 +64,18 @@ create policy "own progress" on public.reading_progress
 |---|---|---|
 | `spend_space_creation(p_idem)` | 有，服务端 `auth.uid()` 认人 | 文档里叫 `create_space_with_credits` |
 | `spend_credits(p_user,p_cost,p_reason,p_idem)` | 有，**要显式传用户 id** | `spend_credits(p_cost,p_reason,p_idem)` |
-| `spend_unit_generation(p_idem)` | **没有** | — |
+| `spend_unit_generation(p_idem)` | 已按下方 SQL 建好（2026-08 收口） | — |
 
 所以 `lib/credits.ts` 的 `spendUnitGeneration()` 先试安全包装 `spend_unit_generation(p_idem)`，
 函数不存在再回落到现有的 4 参数 `spend_credits`。两条路用同一把 `p_idem`，幂等，不会重复扣。
-**不跑任何 SQL 也能正常扣费**（走回落）。
+**不跑任何 SQL 也能正常扣费**（走回落）；收口后自动改走安全包装，无需发版。
 
-### 建议在 Supabase 补的 SQL（安全收口，可选但强烈建议）
+### 已执行的安全收口 SQL（2026-08）
 
-线上的 `spend_credits` 带 `p_user` 参数，且 EXECUTE 仍留在 `PUBLIC` 上——
-**拿公开 anon key 就能替任意用户扣积分**（无需登录）。建议一次性做两件事：
-建一个和 `spend_space_creation` 同款的安全包装，然后把通用扣费口收回给 service_role。
+收口前：线上 `spend_credits` 带 `p_user` 参数、EXECUTE 还留在 `PUBLIC` 上 ——
+**拿公开 anon key 就能替任意用户扣积分**（无需登录，实测可执行）。
+处理：建一个和 `spend_space_creation` 同款的安全包装，再把通用扣费口收回给 service_role。
+收口后实测：anon 调 `spend_credits` 返回 `42501 permission denied`。
 
 ```sql
 -- ① 单元(重)生成的安全扣费口：服务端 auth.uid() 认人，前端不碰 user id
