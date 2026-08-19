@@ -225,8 +225,30 @@ export default function PathPage({ params }: { params: { id: string } }) {
               <div className="rgo">回到上次进度 →</div>
             </Link>
           )}
+          {/* 学完整个空间后，复盘入口顶到最上面；没学完也能进，只是不强调。 */}
+          {pct === 100 && (
+            <Link className="review-hero" href={`/app/space/${spaceId}/review`}>
+              <small>这个空间学完了</small>
+              <div className="ru">生成一份学习总结</div>
+              <div className="rgo">把学过的东西重新串一遍 →</div>
+            </Link>
+          )}
           <div className="minicard">
             <div className="h">本空间</div>
+            <Link
+              className="minirow"
+              href={`/app/space/${spaceId}/review`}
+              style={{ textDecoration: 'none' }}
+            >
+              <span className="mi">
+                <svg viewBox="0 0 24 24">
+                  <path d="M4 5h16v14H4z" />
+                  <path d="M8 9h8M8 13h6" />
+                </svg>
+              </span>
+              <span className="ml">学习总结 · 复盘</span>
+              <span className="mc">›</span>
+            </Link>
             <Link
               className="minirow"
               href={`/app/space/${spaceId}/questions`}

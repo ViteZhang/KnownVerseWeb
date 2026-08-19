@@ -74,3 +74,14 @@ export type QuestionRecord = {
   unit_id: string;
   unit_title: string | null;
 };
+
+/** 空间学习总结（复盘）。落在 space_summaries 表；unit_total/unit_done 记录
+ *  「这份总结是在什么进度上写的」，便于以后再学一段后对比是否该重生成。 */
+export type SpaceSummary = {
+  id: string;
+  space_id: string;
+  content: string;
+  unit_total: number | null;
+  unit_done: number | null;
+  created_at: string;
+};

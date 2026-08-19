@@ -60,6 +60,13 @@ export async function redeemCode(code: string): Promise<RedeemResult> {
   }
 }
 
+// 幂等钥匙后缀:老 webview 里 crypto.randomUUID 可能不存在,退回时间戳 + 随机数。
+export function newIdemSuffix(): string {
+  const c = typeof crypto !== 'undefined' ? crypto : undefined;
+  if (c && typeof c.randomUUID === 'function') return c.randomUUID();
+  return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+}
+
 // 建空间扣费(§5.3):访谈开始前调,idem=客户端一次性 uuid(重试不重扣)。
 export type SpendResult = { ok: boolean; balance?: number; reason?: string; needed?: number };
 
@@ -126,6 +133,36 @@ export async function spendUnitGeneration(
   }
 }
 
+// 空间学习总结(复盘)的补扣。
+// 总结这次 LLM 调用是借 ai-task 的 `ask` 任务发出去的 —— 服务端已经按「划词问 AI」
+// 扣了 cost_ask_ai(默认 1)。但总结送进去的是整个空间的内容摘要,成本远高于一次划词追问,
+// 所以生成成功后前端再补扣一次差价,让一次总结的总价落在 cost_space_summary(默认 10)。
+//
+// 补扣走安全包装 spend_space_summary(p_idem)(服务端 auth.uid() 认人 + 自己算差价),
+// 与 spend_unit_generation 同款。SQL 见 README;没建之前这里返回 function_missing,
+// 调用方据此只提示、不拦着用户看已经生成好的总结(那一次就只花了 cost_ask_ai)。
+export async function spendSpaceSummary(idem: string): Promise<SpendResult> {
+  const sb = getSupabase();
+  try {
+    const { data, error } = await sb.rpc('spend_space_summary', { p_idem: idem });
+    if (error) {
+      const missing =
+        error.code === 'PGRST202' ||
+        (error.message ?? '').includes('Could not find the function');
+      return { ok: false, reason: missing ? 'function_missing' : error.message || 'rpc_error' };
+    }
+    if (!data) return { ok: false, reason: 'empty_response' };
+    return {
+      ok: Boolean(data.ok),
+      balance: data.balance,
+      reason: data.reason,
+      needed: data.needed,
+    };
+  } catch (e) {
+    return { ok: false, reason: e instanceof Error ? e.message : 'network' };
+  }
+}
+
 // 积分流水(§8⑤)。倒序;RLS 只返回本人。
 export type LedgerRow = {
   id: number;
@@ -159,5 +196,6 @@ export const REASON_LABEL: Record<string, string> = {
   space_creation: '新建学习空间',
   unit_generation: '生成学习单元',
   ask_ai: '划词问 AI',
+  space_summary: '空间学习总结',
   refund: '退回积分',
 };

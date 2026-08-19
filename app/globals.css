@@ -175,6 +175,11 @@ a{color:inherit;text-decoration:none}
 .resume-hero small{font-size:10.5px;color:rgba(255,255,255,.6);letter-spacing:.8px;text-transform:uppercase}
 .resume-hero .ru{font-family:var(--font-read);font-size:17px;font-weight:600;margin-top:9px;line-height:1.4}
 .resume-hero .rgo{display:inline-flex;align-items:center;gap:7px;margin-top:14px;font-size:13px;font-weight:600;color:var(--amber)}
+.review-hero{background:linear-gradient(135deg,var(--amber-deep),var(--amber));color:#fff;border-radius:18px;padding:18px;cursor:pointer;transition:.2s;display:block}
+.review-hero:hover{transform:translateY(-2px);box-shadow:var(--shadow)}
+.review-hero small{font-size:10.5px;color:rgba(255,255,255,.78);letter-spacing:.8px;text-transform:uppercase}
+.review-hero .ru{font-family:var(--font-read);font-size:17px;font-weight:600;margin-top:9px;line-height:1.4}
+.review-hero .rgo{display:inline-flex;align-items:center;gap:7px;margin-top:14px;font-size:13px;font-weight:600;color:rgba(255,255,255,.92)}
 .minicard{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:16px}
 .minicard .h{font-size:11px;font-weight:600;letter-spacing:.8px;color:var(--ink-faint);text-transform:uppercase;margin-bottom:12px}
 .minirow{display:flex;align-items:center;gap:9px;padding:9px 0;cursor:pointer;border-bottom:1px dashed var(--line)}
@@ -225,6 +230,10 @@ a{color:inherit;text-decoration:none}
 .stream-more .dots i{width:6px;height:6px;border-radius:50%;background:var(--amber);animation:bob 1s infinite}
 .stream-more .dots i:nth-child(2){animation-delay:.15s}
 .stream-more .dots i:nth-child(3){animation-delay:.3s}
+/* AI 生成的正文里常夹着长英文术语、URL、代码标识符 —— 这类不带断点的长串
+   默认不折行，会把整栏顶宽（窄屏上直接被 body 的 overflow-x:clip 切掉看不见）。
+   统一允许在任意位置断开，中文排版不受影响。 */
+.rd-title,.rd-guide,.rd-h2,.rd-h3,.para,.rd-card,.rd-goals li{overflow-wrap:anywhere}
 .rd-actions{display:flex;align-items:center;gap:12px;margin-top:46px;padding-top:24px;border-top:1px solid var(--line)}
 .done-tag{font-size:15px;font-weight:700;color:var(--sage);padding:6px 0}
 
@@ -242,6 +251,11 @@ a{color:inherit;text-decoration:none}
 .selbubble::after{content:"";position:absolute;left:50%;bottom:-6px;transform:translateX(-50%);border:6px solid transparent;border-top-color:var(--ink);border-bottom:0}
 .selbubble svg{width:15px;height:15px;stroke:var(--amber);fill:none;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
 @keyframes pop{from{opacity:0;transform:translate(-50%,-108%) scale(.9)}to{opacity:1;transform:translate(-50%,-118%) scale(1)}}
+/* 触屏：气泡改放选区下方，箭头朝上（系统的复制/查询菜单占着选区上方） */
+.selbubble.below{transform:translate(-50%,18%);animation:pop-below .14s ease}
+.selbubble.below::after{top:-6px;bottom:auto;border-top:0;border-bottom:6px solid var(--ink);border-top-color:transparent}
+@keyframes pop-below{from{opacity:0;transform:translate(-50%,8%) scale(.9)}to{opacity:1;transform:translate(-50%,18%) scale(1)}}
+
 
 /* ask drawer */
 .scrim{position:fixed;inset:0;background:rgba(20,22,28,.28);z-index:130;opacity:0;visibility:hidden;transition:.25s}
@@ -256,6 +270,7 @@ a{color:inherit;text-decoration:none}
 .dr-h .x:hover{background:var(--surface-2);color:var(--ink)}
 .dr-scroll{flex:1;overflow-y:auto;padding:18px 22px}
 .quote{font-family:var(--font-read);font-size:14px;line-height:1.65;color:var(--ink-soft);background:var(--amber-wash);border-radius:12px;padding:12px 14px;border-left:3px solid var(--amber)}
+.q-scope{display:inline-block;font-family:var(--font-ui);font-size:10.5px;font-weight:700;letter-spacing:.4px;color:var(--amber-deep);background:#fff;border:1px solid var(--amber-line);border-radius:999px;padding:2px 8px;margin-right:8px;vertical-align:2px}
 .chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}
 .chip{font-size:12.5px;color:var(--ink-soft);background:var(--surface);border:1px solid var(--line);border-radius:99px;padding:8px 13px;cursor:pointer;transition:.15s}
 .chip:hover{border-color:var(--amber-line);color:var(--amber-deep);background:#fff}
@@ -263,6 +278,7 @@ a{color:inherit;text-decoration:none}
 .answer.show{display:block;animation:fade .3s ease}
 .answer .alabel{font-size:10.5px;font-weight:700;letter-spacing:.6px;color:var(--amber-deep);text-transform:uppercase;margin-bottom:10px;display:flex;align-items:center;gap:7px}
 .answer p{font-size:14.5px;line-height:1.8;color:#2B2F39;margin-bottom:13px}
+.answer p,.answer li,.answer h2,.answer h3,.quote{overflow-wrap:anywhere}
 .answer p b,.answer strong{font-weight:600;color:var(--ink)}
 .answer h2{font-family:var(--font-read);font-size:17px;font-weight:600;color:var(--ink);margin:14px 0 8px}
 .answer h3{font-family:var(--font-read);font-size:15px;font-weight:600;color:var(--ink);margin:12px 0 6px}
@@ -289,6 +305,17 @@ a{color:inherit;text-decoration:none}
 .ask-input .send svg{width:15px;height:15px;stroke:#fff;fill:none;stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round}
 .kbd{font-size:11px;color:var(--ink-faint);margin-top:9px;text-align:center}
 .kbd b{font-family:var(--font-ui);background:var(--surface);border:1px solid var(--line);border-radius:5px;padding:1px 6px;font-weight:600;color:var(--ink-soft)}
+.kbd-touch{display:none}
+@media(pointer:coarse){.kbd-desktop{display:none}.kbd-touch{display:block}}
+
+/* 手机端「问 AI」悬浮按钮：桌面靠划词 + ⌘K，窄屏才需要这个常驻入口。
+   桌面隐藏,不占版面;窄屏固定在右下角,让开 iOS 底部安全区。 */
+.ask-fab{display:none;position:fixed;right:16px;bottom:calc(18px + env(safe-area-inset-bottom));z-index:110;
+  align-items:center;gap:7px;background:var(--ink);color:#fff;border:none;border-radius:999px;
+  padding:12px 18px;font-family:var(--font-ui);font-size:14px;font-weight:600;cursor:pointer;
+  box-shadow:var(--shadow-lg);-webkit-tap-highlight-color:transparent}
+.ask-fab:active{transform:scale(.96)}
+.ask-fab svg{width:16px;height:16px;stroke:var(--amber);fill:none;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
 
 /* generating overlay */
 .genwrap{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:90px 30px;min-height:400px;animation:fade .3s ease}
@@ -327,7 +354,16 @@ a{color:inherit;text-decoration:none}
   .rd-h2{font-size:19px;margin:30px 0 14px}
   .rd-h3{font-size:16px;margin:22px 0 10px}
   /* 划词问 AI 抽屉在窄屏铺满，问答内容更好读 */
-  .drawer{width:100%;max-width:100%}
+  .drawer{width:100%;max-width:100%;height:100dvh}
+  /* iOS Safari / 微信：输入框字号小于 16px 会在聚焦时自动放大整页，之后再也缩不回去 */
+  .ask-input input{font-size:16px}
+  .dr-foot{padding-bottom:calc(16px + env(safe-area-inset-bottom))}
+  .dr-h{padding:16px 16px 12px}
+  .dr-scroll{padding:16px 16px 24px}
+  /* 手机端常驻「问 AI」入口 */
+  .ask-fab{display:inline-flex}
+  /* 正文底部留出悬浮按钮的高度，最后一行不被压住 */
+  .reading{padding-bottom:120px}
 }
 
 /* ============ 产品区 · 移动端 H5 适配（防横向溢出）============ */
@@ -352,6 +388,13 @@ body{overflow-x:clip}
   .home-wrap{padding:4px 16px 48px}
   .path-grid{padding:4px 16px 48px;gap:18px}
   .qlog-wrap,.inv-wrap,.cf-wrap,.mm-wrap{padding:4px 16px 48px}
+  .sum-wrap{padding:4px 16px 56px}
+  .sum-head h1{font-size:24px}
+  .sum-intro{padding:18px 16px}
+  .sum-body h2{font-size:18px}
+  .sum-body p,.sum-body li{font-size:15.5px}
+  /* 总结正文里的表格可能比屏幕宽，让它自己横滑，别把整页顶出去 */
+  .sum-body table{display:block;overflow-x:auto;white-space:nowrap}
   .ns-wrap{padding:28px 16px 48px}
   .iv-wrap{padding:4px 16px 32px}
   .rp-wrap{padding:4px 16px 48px;gap:18px}
@@ -386,6 +429,41 @@ body{overflow-x:clip}
 }
 
 /* ============ QUESTION LOG ============ */
+/* ============ 空间学习总结（复盘）============ */
+.sum-wrap{max-width:760px;margin:0 auto;padding:6px 28px 72px}
+.sum-head h1{font-family:var(--font-read);font-size:28px;font-weight:600;letter-spacing:.4px}
+.sum-head p{font-size:13px;color:var(--ink-soft);margin-top:8px;line-height:1.7}
+
+/* 还没生成时的说明卡：讲清楚这一次会做什么、花多少 */
+.sum-intro{margin-top:26px;background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:22px 24px}
+.sum-intro .si-t{font-family:var(--font-read);font-size:17px;font-weight:600}
+.sum-intro .si-list{margin:14px 0 20px;padding:0}
+.sum-intro .si-list li{list-style:none;font-size:13.5px;line-height:1.8;color:var(--ink-soft);padding-left:22px;position:relative}
+.sum-intro .si-list li::before{content:"◆";position:absolute;left:0;color:var(--amber);font-size:10px;top:4px}
+.sum-intro .savenote{margin-bottom:12px}
+
+/* 已有总结时的元信息条 */
+.sum-meta{display:flex;align-items:center;flex-wrap:wrap;gap:6px 10px;margin-top:22px;font-size:12px;color:var(--ink-faint)}
+.sum-meta .sum-regen{margin-left:auto;display:inline-flex;align-items:center;gap:7px}
+.sum-meta .savenote{width:100%}
+
+/* 总结正文：读感对齐阅读页（衬线、宽行距） */
+.sum-body{margin-top:22px;font-family:var(--font-read)}
+.sum-body h2{font-size:19px;font-weight:600;letter-spacing:.3px;margin:32px 0 12px;padding-bottom:8px;border-bottom:1px solid var(--line)}
+.sum-body h2:first-child{margin-top:6px}
+.sum-body h3{font-size:16px;font-weight:600;margin:22px 0 10px}
+.sum-body p{font-size:15px;line-height:1.95;color:#2B2F39;margin-bottom:14px}
+.sum-body ul,.sum-body ol{margin:0 0 16px 22px}
+.sum-body li{font-size:15px;line-height:1.9;color:#2B2F39;margin-bottom:7px}
+.sum-body strong,.sum-body b{font-weight:600;color:var(--ink)}
+.sum-body h2,.sum-body h3,.sum-body p,.sum-body li,.sum-body blockquote{overflow-wrap:anywhere}
+.sum-body blockquote{margin:0 0 16px;padding-left:16px;border-left:2.5px solid var(--amber-line);color:var(--ink-soft)}
+.sum-body code{font-family:ui-monospace,monospace;background:var(--surface-2);color:var(--amber-deep);border-radius:4px;padding:1px 5px;font-size:13px}
+.sum-body table{width:100%;border-collapse:collapse;margin-bottom:16px;font-family:var(--font-ui);font-size:13.5px}
+.sum-body th,.sum-body td{border:1px solid var(--line);padding:8px 10px;text-align:left}
+.sum-body th{background:var(--surface);font-weight:600}
+.sum-body hr{border:none;border-top:1px solid var(--line);margin:26px 0}
+
 .qlog-wrap{max-width:760px;margin:0 auto;padding:6px 28px 60px}
 .qlog-head h1{font-family:var(--font-read);font-size:28px;font-weight:600;letter-spacing:.4px}
 .qlog-head p{font-size:13px;color:var(--ink-soft);margin-top:8px}

@@ -12,6 +12,9 @@ export type BillingConfig = {
   cost_unit_generation: number;
   cost_ask_ai: number;
   space_hard_cap: number;
+  // 空间学习总结(复盘)的「总价」。billing_config_public 里暂时没有这一列 ——
+  // 读不到就用下面的兜底值,与 README 里那段 SQL 写死的口径保持一致。
+  cost_space_summary: number;
 };
 
 // 兜底:视图读不到时用锁定默认值(与 billing_config 表默认一致),页面永不空白。
@@ -24,6 +27,7 @@ export const BILLING_FALLBACK: BillingConfig = {
   cost_unit_generation: 10,
   cost_ask_ai: 1,
   space_hard_cap: 50,
+  cost_space_summary: 10,
 };
 
 // 充值档位:线下微信报价单(《终版》§0、§8⑥)。系统里只有「激活码面额」,

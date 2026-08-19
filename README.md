@@ -39,6 +39,99 @@ create policy "own progress" on public.reading_progress
 > 未执行此迁移时，断点写读会静默失败（不影响阅读 / 问 AI / 提问记录）。
 > 网页↔网页断点执行后即生效；**手机→电脑**还需 App 端也写这张表（独立任务）。
 
+## 手机端（H5 / 微信）问 AI
+
+桌面靠「划词 → 气泡 → 抽屉」和 `⌘K`，这两条在手机上都不成立：
+微信内置浏览器里长按选词走不到 `mouseup`，选区还会被拖拽手柄二次调整；`⌘K` 更是没有。
+结果是**窄屏下等于问不了 AI**。这一版补了三条路：
+
+1. **常驻悬浮按钮**（`.ask-fab`，仅 ≤820px 显示）—— 不用选词，点一下就按
+   「你正在读的这一节」提问。锚点取右栏目录当前高亮的标题块，
+   上下文照旧走 `buildSectionContext()` 切出整节，服务端入参与划词提问完全一致。
+   `selectedText` 传本节标题（不是空串），服务端 `ask` 的提示词模板才自洽。
+2. **触屏划词**：粗指针设备改听 `selectionchange`，停手 320ms 后判定，
+   避免边拖边闪；气泡改放到选区**下方**（系统的复制/查询菜单占着上方）。
+3. **抽屉的手机适配**：输入框字号提到 16px（小于 16px 时 iOS Safari / 微信
+   会在聚焦时自动放大整页且缩不回去）、底部让开安全区、`100dvh`、
+   聚焦后把输入框滚到可视区、触屏不自动弹键盘（否则预设追问按钮全被顶出屏幕）、
+   快捷键提示换成手机版文案。
+
+顺带修了一个通用问题：AI 生成的正文里夹带长英文术语 / URL / 代码标识符时，
+这类无断点长串会把整栏顶宽（窄屏上被 `body{overflow-x:clip}` 直接切掉看不见）。
+阅读正文、问 AI 回答、总结正文统一加了 `overflow-wrap:anywhere`。
+
+## 空间学习总结（复盘）
+
+路径页右侧「学习总结 · 复盘」进入 `/app/space/[id]/review`；学完 100% 时
+额外顶一张醒目的入口卡。做的事：把这个空间里**已生成的全部单元内容** +
+**你在这个空间问过的问题**压成一份内容摘要交给 AI，写成固定六节的复盘报告
+（一句话总括 / 知识地图 / 必须记住的核心概念 / 你问得最多的地方 /
+还没吃透的部分 / 下一步），落库保存，下次进来直接读缓存不再花钱。
+之后又学完了新单元时，页面会提示这份总结已过时、可以重写。
+
+### 为什么借 `ask` 任务
+
+网页版仓库里没有 Edge Function 源码，加不了 `gen_space_summary` 这种新任务。
+`ask` 的入参（`spaceId / unitId / selectedText / sectionContext / question`）刚好够用：
+内容摘要塞进 `sectionContext`、「写一份复盘」的要求塞进 `question`，
+而且服务端照样会注入这个空间的学习档案 —— 总结自带「因人而异」。
+
+代价是它按「划词问 AI」计价（`cost_ask_ai`，默认 1），而一次总结送进去的是
+整个空间的摘要（预算 8000 字，按已生成单元数均分，每单元 200–900 字）。
+所以生成成功后前端补扣差价，让一次总结的**总价**落在 `cost_space_summary`（默认 10）。
+积分流水上会看到两笔：`划词问 AI −1` + `空间学习总结 −9`。
+
+### 一次性后端准备
+
+**不跑这段 SQL 功能也能用**，只是：总结不落库（离开页面就没了，页面会明说），
+且一次只按 1 积分计价。跑完即生效，前端无需发版。
+
+```sql
+-- ① 总结落库
+create table if not exists public.space_summaries (
+  id         uuid primary key default gen_random_uuid(),
+  user_id    uuid not null default auth.uid(),
+  space_id   uuid not null references public.spaces(id) on delete cascade,
+  content    text not null,
+  unit_total int,
+  unit_done  int,
+  created_at timestamptz not null default now()
+);
+create index if not exists space_summaries_space_created_idx
+  on public.space_summaries (space_id, created_at desc);
+alter table public.space_summaries enable row level security;
+drop policy if exists "own summaries" on public.space_summaries;
+create policy "own summaries" on public.space_summaries
+  using (user_id = auth.uid()) with check (user_id = auth.uid());
+
+-- ② 补扣差价的安全口（与 spend_unit_generation 同款：服务端 auth.uid() 认人）
+create or replace function public.spend_space_summary(p_idem text)
+returns jsonb language plpgsql security definer set search_path = public as $$
+declare v_user uuid := auth.uid(); v_total int; v_ask int; v_cost int;
+begin
+  if v_user is null then
+    return jsonb_build_object('ok', false, 'reason', 'not_authenticated');
+  end if;
+  -- 走 to_jsonb 取 cost_space_summary：这一列现在还没有，取不到就退回 10，不报错。
+  select coalesce((to_jsonb(b) ->> 'cost_space_summary')::int, 10),
+         coalesce(b.cost_ask_ai, 1)
+    into v_total, v_ask
+    from public.billing_config b where b.id = true;
+  -- ask 任务已经扣过 cost_ask_ai，这里只补差价。
+  v_cost := greatest(coalesce(v_total, 10) - coalesce(v_ask, 1), 0);
+  if v_cost = 0 then
+    return jsonb_build_object('ok', true, 'reason', 'no_topup_needed');
+  end if;
+  return public.spend_credits(v_user, v_cost, 'space_summary', p_idem);
+end $$;
+revoke all on function public.spend_space_summary(text) from public, anon;
+grant execute on function public.spend_space_summary(text) to authenticated;
+```
+
+> 想改总结的总价：给 `billing_config` 加一列 `cost_space_summary int default 10`，
+> 并把它加进 `billing_config_public` 视图 —— 前端与上面的函数都会自动读到，
+> 两边永远一致（《终版》§2：数字不写死在前端）。
+
 ## 重新生成单元（生成不完善时的补救）
 
 单元阅读页底部有「重新生成」入口；生成的流在写完前断掉（只出来一部分）时，

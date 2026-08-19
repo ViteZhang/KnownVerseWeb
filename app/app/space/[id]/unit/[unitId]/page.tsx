@@ -7,7 +7,7 @@ import { ReadingBlocks, headingsOf } from '@/components/reading-blocks';
 import { usePaywall } from '@/components/paywall/paywall-provider';
 import { askAI, genUnitStream } from '@/lib/ai';
 import { BILLING_FALLBACK, getBillingConfigPublic } from '@/lib/billing';
-import { getCreditStatus, spendUnitGeneration } from '@/lib/credits';
+import { getCreditStatus, newIdemSuffix, spendUnitGeneration } from '@/lib/credits';
 import {
   DEFAULT_PREFS,
   fetchReadingPrefs,
@@ -16,7 +16,7 @@ import {
 } from '@/lib/reading-prefs';
 import { fetchReadingProgress, saveReadingProgress } from '@/lib/reading-progress';
 import { saveQuestion } from '@/lib/questions';
-import { buildSectionContext } from '@/lib/section-context';
+import { blockText, buildSectionContext } from '@/lib/section-context';
 import {
   fetchSpacePath,
   findNextUnit,
@@ -24,13 +24,6 @@ import {
 } from '@/lib/spaces';
 import { fetchUnitById, persistUnitContent } from '@/lib/units';
 import type { ContentBlock, PhaseWithUnits, Unit } from '@/lib/types';
-
-// 幂等钥匙后缀：老 webview 里 crypto.randomUUID 可能不存在，退回时间戳 + 随机数。
-function newIdemSuffix(): string {
-  const c = typeof crypto !== 'undefined' ? crypto : undefined;
-  if (c && typeof c.randomUUID === 'function') return c.randomUUID();
-  return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
-}
 
 export default function UnitPage({
   params,
@@ -82,14 +75,17 @@ export default function UnitPage({
   // 划词选区
   const [selText, setSelText] = useState('');
   const [selIndex, setSelIndex] = useState<number | null>(null);
-  const [bubble, setBubble] = useState<{ x: number; y: number; show: boolean }>({
-    x: 0,
-    y: 0,
-    show: false,
-  });
+  const [bubble, setBubble] = useState<{
+    x: number;
+    y: number;
+    show: boolean;
+    below: boolean;
+  }>({ x: 0, y: 0, show: false, below: false });
 
   // 抽屉
   const [drawerOpen, setDrawerOpen] = useState(false);
+  // 整节提问：手机上没法稳定划词，从悬浮按钮直接就「你正在读的这一节」提问。
+  const [askWhole, setAskWhole] = useState(false);
   const [asking, setAsking] = useState(false);
   const [answer, setAnswer] = useState<string | null>(null);
   const [askError, setAskError] = useState<string | null>(null);
@@ -259,57 +255,108 @@ export default function UnitPage({
     setBubble((b) => (b.show ? { ...b, show: false } : b));
   }, []);
 
-  const handleMouseUp = useCallback(() => {
-    setTimeout(() => {
-      const sel = window.getSelection();
-      if (!sel || sel.rangeCount === 0) return clearBubble();
-      const text = sel.toString().trim();
-      const reading = readingRef.current;
-      if (text.length >= 2 && reading && reading.contains(sel.anchorNode)) {
-        const range = sel.getRangeAt(0);
-        // 定位所在块 index（para/card 带 data-block-index）。
-        let node: Node | null = range.startContainer;
-        let el = node.nodeType === 3 ? node.parentElement : (node as HTMLElement);
-        const blockEl = el?.closest('[data-block-index]') as HTMLElement | null;
-        if (!blockEl) return clearBubble();
-        const idx = Number(blockEl.dataset.blockIndex);
-        const rect = range.getBoundingClientRect();
-        setSelText(text);
-        setSelIndex(idx);
-        setBubble({
-          x: rect.left + rect.width / 2,
-          y: rect.top,
-          show: true,
-        });
-      } else {
-        clearBubble();
-      }
-    }, 10);
+
+  // 读一次当前选区 → 决定要不要弹「问 AI」气泡。鼠标和触屏共用这一段。
+  const readSelection = useCallback(() => {
+    const sel = window.getSelection();
+    if (!sel || sel.rangeCount === 0) return clearBubble();
+    const text = sel.toString().trim();
+    const reading = readingRef.current;
+    if (text.length >= 2 && reading && reading.contains(sel.anchorNode)) {
+      const range = sel.getRangeAt(0);
+      // 定位所在块 index（para/card 带 data-block-index）。
+      const node: Node = range.startContainer;
+      const el = node.nodeType === 3 ? node.parentElement : (node as HTMLElement);
+      const blockEl = el?.closest('[data-block-index]') as HTMLElement | null;
+      if (!blockEl) return clearBubble();
+      const idx = Number(blockEl.dataset.blockIndex);
+      const rect = range.getBoundingClientRect();
+      // 触屏上系统的「复制/查询」菜单就贴在选区上方，气泡跟它抢位置会被盖住 ——
+      // 粗指针（手机/平板）一律把气泡放到选区下方；靠近视口顶部时也放下方。
+      const coarse = window.matchMedia?.('(pointer: coarse)')?.matches === true;
+      const below = coarse || rect.top < 96;
+      setSelText(text);
+      setSelIndex(idx);
+      setBubble({
+        x: rect.left + rect.width / 2,
+        y: below ? rect.bottom : rect.top,
+        show: true,
+        below,
+      });
+    } else {
+      clearBubble();
+    }
   }, [clearBubble]);
 
+  const handleMouseUp = useCallback(() => {
+    setTimeout(readSelection, 10);
+  }, [readSelection]);
+
+  // 触屏（微信内置浏览器 / Safari 等）：长按选词走不到 mouseup，选区还会被拖拽手柄
+  // 二次调整。这里监听 selectionchange，停手约 320ms 后再判定，避免边拖边闪。
   useEffect(() => {
-    const onDown = (e: MouseEvent) => {
-      const t = e.target as HTMLElement;
-      if (!t.closest('.selbubble')) clearBubble();
+    if (typeof window === 'undefined') return;
+    if (window.matchMedia?.('(pointer: coarse)')?.matches !== true) return;
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    const onSelChange = () => {
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(readSelection, 320);
+    };
+    document.addEventListener('selectionchange', onSelChange);
+    return () => {
+      document.removeEventListener('selectionchange', onSelChange);
+      if (timer) clearTimeout(timer);
+    };
+  }, [readSelection]);
+
+  useEffect(() => {
+    const onDown = (e: MouseEvent | TouchEvent) => {
+      const t = e.target as HTMLElement | null;
+      // 点在气泡上不收（那是要去开抽屉）；触屏上选区拖拽手柄在正文里，也不该误收。
+      if (t && !t.closest('.selbubble')) clearBubble();
     };
     const onScroll = () => clearBubble();
     document.addEventListener('mousedown', onDown);
+    document.addEventListener('touchstart', onDown as unknown as EventListener);
     window.addEventListener('scroll', onScroll, true);
     return () => {
       document.removeEventListener('mousedown', onDown);
+      document.removeEventListener('touchstart', onDown as unknown as EventListener);
       window.removeEventListener('scroll', onScroll, true);
     };
   }, [clearBubble]);
 
   // ── 抽屉 / 提问 ───────────────────────────────────────────────────
-  const openDrawer = useCallback(() => {
-    setAnswer(null);
-    setAskError(null);
-    setAsking(false);
-    setSaveStatus('idle');
-    setDrawerOpen(true);
-    clearBubble();
-  }, [clearBubble]);
+  const openDrawer = useCallback(
+    (whole = false) => {
+      setAnswer(null);
+      setAskError(null);
+      setAsking(false);
+      setSaveStatus('idle');
+      setAskWhole(whole);
+      setDrawerOpen(true);
+      clearBubble();
+    },
+    [clearBubble],
+  );
+
+  // 整节提问（手机端主入口）：不要求划词，直接把「你正在读的这一节」当上下文。
+  // 锚点取右栏目录当前高亮的标题块；没有标题就退到正文开头。
+  const openSectionAsk = useCallback(() => {
+    if (!unit || blocks.length === 0) return;
+    const parsed = tocCur ? Number(tocCur.replace('sec-', '')) : NaN;
+    const idx =
+      Number.isFinite(parsed) && parsed >= 0 && parsed < blocks.length ? parsed : 0;
+    // selectedText 在服务端是「用户选中的那段话」——整节提问给它本节标题，
+    // 提示词才自洽；上下文照旧由 buildSectionContext 按这个锚点切出整节。
+    const label =
+      blockText(blocks[idx] as ContentBlock).trim() || unit.title || '本单元';
+    setSelText(label);
+    setSelIndex(idx);
+    // 选区可能是空的，先清掉浏览器里的残留高亮，免得抽屉里引文对不上。
+    window.getSelection()?.removeAllRanges();
+    openDrawer(true);
+  }, [unit, blocks, tocCur, openDrawer]);
 
   // ⌘K / Ctrl+K：选中文字直接唤起；Esc 关闭。
   useEffect(() => {
@@ -320,7 +367,7 @@ export default function UnitPage({
         const anchor = window.getSelection()?.anchorNode ?? null;
         if (text.length >= 2 && reading && reading.contains(anchor)) {
           e.preventDefault();
-          openDrawer();
+          openDrawer(false);
         }
       }
       if (e.key === 'Escape') setDrawerOpen(false);
@@ -666,11 +713,23 @@ export default function UnitPage({
         </div>
       </div>
 
+      {/* 手机端问 AI 主入口：窄屏才显示（CSS 控制）。
+          桌面靠划词 + ⌘K 就够，手机上长按选词在微信内置浏览器里很不稳，
+          没有这个按钮等于「H5 下问不了 AI」。点它按你正在读的这一节提问。 */}
+      {unit && blocks.length > 0 && !generating && !drawerOpen && (
+        <button className="ask-fab" onClick={openSectionAsk} aria-label="问 AI">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M21 11.5a8.38 8.38 0 0 1-8.5 8.5 8.5 8.5 0 0 1-3.9-.9L3 21l1.9-5.6A8.5 8.5 0 1 1 21 11.5z" />
+          </svg>
+          问 AI
+        </button>
+      )}
+
       {/* 划词气泡 */}
       <div
-        className={`selbubble${bubble.show ? ' show' : ''}`}
+        className={`selbubble${bubble.show ? ' show' : ''}${bubble.below ? ' below' : ''}`}
         style={{ left: bubble.x, top: bubble.y }}
-        onClick={openDrawer}
+        onClick={() => openDrawer(false)}
       >
         <svg viewBox="0 0 24 24">
           <path d="M21 11.5a8.38 8.38 0 0 1-8.5 8.5 8.5 8.5 0 0 1-3.9-.9L3 21l1.9-5.6A8.5 8.5 0 1 1 21 11.5z" />
@@ -707,6 +766,7 @@ export default function UnitPage({
       {/* 右侧问 AI 抽屉 */}
       <AskDrawer
         open={drawerOpen}
+        wholeSection={askWhole}
         selectedText={selText}
         asking={asking}
         answer={answer}

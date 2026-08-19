@@ -14,6 +14,7 @@ export type SaveStatus = 'idle' | 'saving' | 'saved' | 'failed';
 
 export function AskDrawer({
   open,
+  wholeSection = false,
   selectedText,
   asking,
   answer,
@@ -23,6 +24,8 @@ export function AskDrawer({
   onAsk,
 }: {
   open: boolean;
+  /** 整节提问（手机端悬浮按钮进来的）：引文区展示的是「本节」而不是选中的一段话。 */
+  wholeSection?: boolean;
   selectedText: string;
   asking: boolean;
   answer: string | null;
@@ -34,12 +37,17 @@ export function AskDrawer({
   const [value, setValue] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // 每次打开抽屉清空输入并聚焦。
+  // 每次打开抽屉清空输入。桌面自动聚焦；触屏不自动聚焦 ——
+  // 一开抽屉就弹起软键盘会把「预设追问」按钮全顶出屏幕，手机上反而更难用。
   useEffect(() => {
-    if (open) {
-      setValue('');
-      setTimeout(() => inputRef.current?.focus(), 60);
-    }
+    if (!open) return;
+    setValue('');
+    const coarse =
+      typeof window !== 'undefined' &&
+      window.matchMedia?.('(pointer: coarse)')?.matches === true;
+    if (coarse) return;
+    const t = setTimeout(() => inputRef.current?.focus(), 60);
+    return () => clearTimeout(t);
   }, [open, selectedText]);
 
   const send = () => {
@@ -67,7 +75,12 @@ export function AskDrawer({
         </div>
 
         <div className="dr-scroll">
-          <div className="quote">{selectedText || '（你选中的文字会显示在这里）'}</div>
+          <div className="quote">
+            {wholeSection && (
+              <span className="q-scope">就这一节提问</span>
+            )}
+            {selectedText || '（你选中的文字会显示在这里）'}
+          </div>
 
           {!answer && !asking && (
             <div className="chips">
@@ -111,9 +124,17 @@ export function AskDrawer({
           <div className="ask-input">
             <input
               ref={inputRef}
-              placeholder="就选中的内容追问…"
+              placeholder={wholeSection ? '就这一节追问…' : '就选中的内容追问…'}
               value={value}
+              enterKeyHint="send"
+              autoComplete="off"
+              autoCorrect="off"
               onChange={(e) => setValue(e.target.value)}
+              onFocus={(e) => {
+                // 微信/Safari 里软键盘弹起后不会自动把输入框顶上来，手动滚一下。
+                const el = e.currentTarget;
+                setTimeout(() => el.scrollIntoView({ block: 'center' }), 300);
+              }}
               onKeyDown={(e) => {
                 if (e.key === 'Enter') send();
               }}
@@ -124,8 +145,12 @@ export function AskDrawer({
               </svg>
             </button>
           </div>
-          <div className="kbd">
+          {/* 快捷键说明只对桌面成立；手机端换成对应的操作提示（CSS 控制显隐）。 */}
+          <div className="kbd kbd-desktop">
             选中文字后按 <b>⌘K</b> 也能唤起 · <b>Enter</b> 发送
+          </div>
+          <div className="kbd kbd-touch">
+            长按正文选词可就那一句提问 · 回车发送
           </div>
         </div>
       </aside>
