@@ -36,12 +36,16 @@ export function AskDrawer({
 }) {
   const [value, setValue] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
+  // 最近一次发出去的问题：发送时输入框立刻清空，万一这次问失败了再把它还回去，
+  // 省得用户把一长串问题重打一遍。
+  const lastSentRef = useRef('');
 
   // 每次打开抽屉清空输入。桌面自动聚焦；触屏不自动聚焦 ——
   // 一开抽屉就弹起软键盘会把「预设追问」按钮全顶出屏幕，手机上反而更难用。
   useEffect(() => {
     if (!open) return;
     setValue('');
+    lastSentRef.current = '';
     const coarse =
       typeof window !== 'undefined' &&
       window.matchMedia?.('(pointer: coarse)')?.matches === true;
@@ -53,13 +57,26 @@ export function AskDrawer({
   const send = () => {
     const q = value.trim();
     if (!q || asking) return;
+    // 先清空再发：onAsk 是异步的，等它回来才清会让输入框一直挂着已经发出去的问题。
+    setValue('');
+    lastSentRef.current = q;
     onAsk(q);
   };
 
   const onChip = (fill: string) => {
     if (asking) return;
+    // 点预设追问同样清掉输入框里已经打了一半的字，不然发出去的和看到的对不上。
+    setValue('');
+    lastSentRef.current = fill;
     onAsk(fill);
   };
+
+  // 问失败了（网络/积分/服务端报错）就把刚才那句还给输入框，改一改可以直接重发。
+  useEffect(() => {
+    if (!askError || !lastSentRef.current) return;
+    setValue(lastSentRef.current);
+    lastSentRef.current = '';
+  }, [askError]);
 
   return (
     <>
